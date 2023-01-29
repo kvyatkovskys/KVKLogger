@@ -1,6 +1,16 @@
-public struct KVKLogger {
-    public private(set) var text = "Hello, World!"
+//
+//  KVKLogger.swift
+//  
+//
+//  Created by Sergei Kviatkovskii on 1/29/23.
+//
 
-    public init() {
-    }
+import Foundation
+
+open class KVKLogger {
+    
+    static let shared = KVKLogger()
+    
+    var logs = [ItemLog]()
+    
 }

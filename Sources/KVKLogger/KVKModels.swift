@@ -66,3 +66,7 @@ public enum KVKStatus: Identifiable {
         }
     }
 }
+
+struct ItemLog {
+    
+}
