@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+#if os(iOS)
+
+import UIKit
+
 public protocol KVKLoggerRouter {}
 
 public extension KVKLoggerRouter where Self: UIViewController {
@@ -27,3 +31,5 @@ public extension KVKLoggerRouter where Self: UIViewController {
     }
     
 }
+
+#endif

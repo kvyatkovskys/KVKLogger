@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#endif
+
 public enum KVKStatus: Identifiable, Hashable {
     case info, error, debug, warning, verbose
     /// custom error entity
@@ -68,6 +72,10 @@ public enum KVKStatus: Identifiable, Hashable {
         case .verbose:
             return "🔍:"
         }
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
 
