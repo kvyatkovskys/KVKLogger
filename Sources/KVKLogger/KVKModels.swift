@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-public enum KVKStatus: Identifiable {
+public enum KVKStatus: Identifiable, Hashable {
     case info, error, debug, warning, verbose
     /// custom error entity
     /// parameters:
@@ -15,21 +15,8 @@ public enum KVKStatus: Identifiable {
     /// - color: color of error
     case custom(_ name: String, _ color: UIColor)
     
-    public var id: Int {
-        switch self {
-        case .custom:
-            return 0
-        case .info:
-            return 1
-        case .error:
-            return 2
-        case .debug:
-            return 3
-        case .warning:
-            return 4
-        case .verbose:
-            return 5
-        }
+    public var id: KVKStatus {
+        self
     }
     
     public var title: String {
@@ -65,8 +52,47 @@ public enum KVKStatus: Identifiable {
             return .systemTeal
         }
     }
+    
+    public var icon: String {
+        switch self {
+        case .custom:
+            return "🟢:"
+        case .info:
+            return "ℹ️:"
+        case .error:
+            return "❌:"
+        case .debug:
+            return "🔵:"
+        case .warning:
+            return "⚠️:"
+        case .verbose:
+            return "🔍:"
+        }
+    }
 }
 
-struct ItemLog {
+public enum KVKLogType: Int {
+    case os, debug, print
+}
+
+struct ItemLog: Equatable {
+    var status: KVKStatus
+    var type: KVKLogType
+    var items: Any
+    var date: Date
+    var details: String?
+    
+    var formattedDate: String {
+        date.formatted(date: .abbreviated, time: .complete)
+    }
+    
+    var formattedTxt: String {
+        String(describing: items)
+    }
+    
+    static func == (lhs: ItemLog, rhs: ItemLog) -> Bool {
+        lhs.date == rhs.date
+        && lhs.status == rhs.status
+    }
     
 }
