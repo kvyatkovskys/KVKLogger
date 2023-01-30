@@ -16,16 +16,15 @@ open class KVKLogger {
     
     @ObservedObject var vm = KVKLoggerVM()
     
-    public func log(_ items: Any,
+    public func log(_ items: Any...,
                     status: KVKStatus = .info,
                     type: KVKLogType = .debug,
                     filename: String = #file,
                     line: Int = #line,
-                    column: Int = #column,
                     funcName: String = #function) {
         var details: String?
         if status == .verbose {
-            details = "file: \(sourceFileName(filePath: filename))\nline: \(line)\ncolumn: \(column)\nfunction: \(funcName)"
+            details = "file: \(sourceFileName(filePath: filename))\nline: \(line)\nfunction: \(funcName)"
         }
         
         let date = Date()
@@ -46,7 +45,7 @@ open class KVKLogger {
         return components.isEmpty ? "" : components.last!
     }
     
-    private func printLog(_ items: Any,
+    private func printLog(_ items: Any...,
                           details: String? = nil,
                           status: KVKStatus,
                           type: KVKLogType,
