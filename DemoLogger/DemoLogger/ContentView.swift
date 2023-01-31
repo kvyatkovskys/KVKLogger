@@ -11,7 +11,7 @@ import KVKLogger
 struct ContentView: View {
     
     @State private var statuses: [KVKStatus] = [
-        .info, .error, .debug, .warning, .verbose, .custom("Custom", .systemPink)
+        .info, .error, .debug, .warning, .verbose, .custom("Custom")
     ]
     @State private var selectedStatus: KVKStatus = .info
     @State private var isOpenedConsole = false

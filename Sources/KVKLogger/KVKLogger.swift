@@ -28,8 +28,8 @@ open class KVKLogger {
         }
         
         let date = Date()
-        let item = ItemLog(status: status, type: type, items: items, date: date, details: details)
-        vm.logs.append(item)
+//        let item = ItemLog(status: status, type: type, items: items, date: date, details: details)
+//        vm.logs.append(item)
         
         if isDebugMode != false {
             printLog(items, details: details, status: status, type: type, date: date)

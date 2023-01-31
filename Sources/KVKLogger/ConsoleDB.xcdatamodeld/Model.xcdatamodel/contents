@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="21513" systemVersion="22D49" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="ItemLog" representedClassName="ItemLog" syncable="YES" codeGenerationType="class">
+        <attribute name="createdAt_" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="details_" optional="YES" attributeType="String"/>
+        <attribute name="items_" optional="YES" attributeType="Binary"/>
+        <attribute name="status_" optional="YES" attributeType="String"/>
+        <attribute name="type_" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="NetworkLog" representedClassName="NetworkLog" syncable="YES" codeGenerationType="class"/>
+</model>
