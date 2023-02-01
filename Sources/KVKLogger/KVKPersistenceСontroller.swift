@@ -19,25 +19,33 @@ struct KVKPersistenceСontroller {
             newItem.createdAt_ = Date()
             newItem.status_ = KVKStatus.info.rawValue
             newItem.type_ = KVKLogType.debug.rawValue
-//            newItem.details_ = "Test details\nnew line\nfunction"
-//            newItem.items_ = "Test description log".data(using: .utf8)
+            newItem.details_ = "Test details\nnew line\nfunction"
+            newItem.items_ = "Test description log".data(using: .utf8)
         }
         do {
             try viewContext.save()
         } catch {
             let nsError = error as NSError
-            fatalError("Unresolved error \(nsError),  \(nsError.userInfo)")
+            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
         }
         return result
     }()
     
     let container: NSPersistentContainer
     
+    private let dbName = "ConsoleDB"
+    
     init(inMemory: Bool = false) {
-        container = NSPersistentContainer(name: "ConsoleDB")
+        guard let url = Bundle.module.url(forResource: dbName, withExtension: "momd") else {
+            fatalError("Could not get URL for model: \(dbName)")
+        }
+        guard let model = NSManagedObjectModel(contentsOf: url) else {
+            fatalError("Could not get model for: \(url)")
+        }
+        container = NSPersistentContainer(name: dbName, managedObjectModel: model)
         if inMemory {
             if #available(iOS 16.0, *) {
-                container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
+                container.persistentStoreDescriptions.first!.url = URL(filePath: "/dev/null")
             } else {
                 container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
             }

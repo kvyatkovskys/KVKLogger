@@ -22,6 +22,7 @@
 		F95AA61A29867BC90089D3EA /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		F95AA62229867BD90089D3EA /* KVKLogger */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = KVKLogger; path = ..; sourceTree = "<group>"; };
 		F95AA6262986C5BB0089D3EA /* DemoLogger.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DemoLogger.entitlements; sourceTree = "<group>"; };
+		F9FD9973298A5425005B32DC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +58,7 @@
 		F95AA61229867BC90089D3EA /* DemoLogger */ = {
 			isa = PBXGroup;
 			children = (
+				F9FD9973298A5425005B32DC /* Info.plist */,
 				F95AA6262986C5BB0089D3EA /* DemoLogger.entitlements */,
 				F95AA61329867BC90089D3EA /* DemoLoggerApp.swift */,
 				F95AA61529867BC90089D3EA /* ContentView.swift */,
@@ -296,8 +298,8 @@
 				DEVELOPMENT_TEAM = P44LMMDHV3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DemoLogger/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -331,8 +333,8 @@
 				DEVELOPMENT_TEAM = P44LMMDHV3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DemoLogger/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

@@ -48,16 +48,16 @@ struct KVKLoggerProxyView: View {
             ScrollView {
                 ForEach(logs) { (log) in
                     HStack {
-                        //Text(log.status.icon)
-                        //                            VStack(alignment: .leading) {
-                        //                                Text(log.formattedTxt)
-                        //                                if let details = log.details {
-                        //                                    Text(details)
-                        //                                }
-                        //                                Text(log.formattedDate)
-                        //                                    .foregroundColor(Color(uiColor: .systemGray))
-                        //                                    .font(.subheadline)
-                        //                            }
+                        Text(log.status.icon)
+                        VStack(alignment: .leading) {
+                            Text(log.items)
+                            if let details = log.details {
+                                Text(details)
+                            }
+                            Text(log.formattedCreatedAt)
+                                .foregroundColor(Color(uiColor: .systemGray))
+                                .font(.subheadline)
+                        }
                         Spacer()
                     }
                     .id(log.id)
@@ -66,7 +66,7 @@ struct KVKLoggerProxyView: View {
             }
             .task {
                 withAnimation {
-                    //proxy.scrollTo(logs.endIndex - 1)
+                    proxy.scrollTo(logs.endIndex - 1)
                 }
             }
             .padding([.leading, .trailing], 5)

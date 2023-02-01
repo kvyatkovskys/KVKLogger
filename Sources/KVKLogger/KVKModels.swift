@@ -111,7 +111,7 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
     }
     
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+        hasher.combine(rawValue)
     }
 }
 
@@ -119,24 +119,44 @@ public enum KVKLogType: String {
     case os, debug, print
 }
 
-//struct ItemLog: Equatable {
-//    var status: KVKStatus
-//    var type: KVKLogType
-//    var items: Any
-//    var date: Date
-//    var details: String?
-//
-//    var formattedDate: String {
-//        date.formatted(date: .abbreviated, time: .complete)
-//    }
-//
-//    var formattedTxt: String {
-//        String(describing: items)
-//    }
-//
-//    static func == (lhs: ItemLog, rhs: ItemLog) -> Bool {
-//        lhs.date == rhs.date
-//        && lhs.status == rhs.status
-//    }
-//
-//}
+extension ItemLog {
+    
+    var status: KVKStatus {
+        get {
+            guard let item = status_ else { return .info }
+            return KVKStatus(rawValue: item) ?? .info
+        }
+        set { status_ = newValue.rawValue }
+    }
+    
+    var type: KVKLogType {
+        get {
+            guard let item = type_ else { return .debug }
+            return KVKLogType(rawValue: item) ?? .debug
+        }
+    }
+    
+    var createdAt: Date {
+        get { createdAt_ ?? Date() }
+        set { createdAt_ = newValue }
+    }
+    
+    var details: String? {
+        get { details_ }
+        set { details_ = newValue }
+    }
+    
+    var formattedCreatedAt: String {
+        createdAt.formatted(date: .abbreviated, time: .complete)
+    }
+    
+    var items: String {
+        get {
+            ""
+        }
+        set {
+            items_ = newValue.data(using: .utf8)
+        }
+    }
+    
+}

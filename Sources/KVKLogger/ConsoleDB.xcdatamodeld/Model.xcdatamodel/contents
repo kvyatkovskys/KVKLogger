@@ -7,5 +7,4 @@
         <attribute name="status_" optional="YES" attributeType="String"/>
         <attribute name="type_" optional="YES" attributeType="String"/>
     </entity>
-    <entity name="NetworkLog" representedClassName="NetworkLog" syncable="YES" codeGenerationType="class"/>
 </model>
