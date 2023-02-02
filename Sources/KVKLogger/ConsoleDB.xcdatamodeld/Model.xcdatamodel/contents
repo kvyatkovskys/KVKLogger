@@ -3,7 +3,7 @@
     <entity name="ItemLog" representedClassName="ItemLog" syncable="YES" codeGenerationType="class">
         <attribute name="createdAt_" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="details_" optional="YES" attributeType="String"/>
-        <attribute name="items_" optional="YES" attributeType="Binary"/>
+        <attribute name="items_" optional="YES" attributeType="String"/>
         <attribute name="status_" optional="YES" attributeType="String"/>
         <attribute name="type_" optional="YES" attributeType="String"/>
     </entity>

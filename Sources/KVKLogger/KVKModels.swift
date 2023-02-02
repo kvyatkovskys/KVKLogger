@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 #if os(iOS)
 import UIKit
@@ -96,17 +97,17 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
     public var icon: String {
         switch self {
         case .custom:
-            return "🟢:"
+            return "🟢"
         case .info:
-            return "ℹ️:"
+            return "ℹ️"
         case .error:
-            return "❌:"
+            return "❌"
         case .debug:
-            return "🔵:"
+            return "🔵"
         case .warning:
-            return "⚠️:"
+            return "⚠️"
         case .verbose:
-            return "🔍:"
+            return "🔍"
         }
     }
     
@@ -121,6 +122,20 @@ public enum KVKLogType: String {
 
 extension ItemLog {
     
+    static func fecth() -> NSFetchRequest<ItemLog> {
+        let request = NSFetchRequest<ItemLog>(entityName: self.description())
+        request.predicate = NSPredicate(value: true)
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \ItemLog.createdAt_, ascending: true)]
+        return request
+    }
+    
+    static func delete(at offsets: IndexSet, for items: [ItemLog]) {
+        if let first = items.first, let context = first.managedObjectContext {
+            offsets.map { items[$0] }.forEach(context.delete)
+            context.saveContext()
+        }
+    }
+    
     var status: KVKStatus {
         get {
             guard let item = status_ else { return .info }
@@ -134,6 +149,7 @@ extension ItemLog {
             guard let item = type_ else { return .debug }
             return KVKLogType(rawValue: item) ?? .debug
         }
+        set { type_ = newValue.rawValue }
     }
     
     var createdAt: Date {
@@ -152,10 +168,10 @@ extension ItemLog {
     
     var items: String {
         get {
-            ""
+            items_ ?? ""
         }
         set {
-            items_ = newValue.data(using: .utf8)
+            items_ = newValue
         }
     }
     

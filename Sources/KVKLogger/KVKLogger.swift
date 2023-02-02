@@ -6,8 +6,11 @@
 //
 
 import SwiftUI
+import CoreData
 
 open class KVKLogger {
+
+    private let viewContext = KVKPersistenceСontroller.shared.viewContext
     
     public static let shared = KVKLogger()
     /// Debug Mode
@@ -28,8 +31,13 @@ open class KVKLogger {
         }
         
         let date = Date()
-//        let item = ItemLog(status: status, type: type, items: items, date: date, details: details)
-//        vm.logs.append(item)
+        let item = ItemLog(context: viewContext)
+        item.createdAt = date
+        item.status = status
+        item.type = type
+        item.details = details
+        item.items = String(describing: items)
+        viewContext.saveContext()
         
         if isDebugMode != false {
             printLog(items, details: details, status: status, type: type, date: date)
@@ -42,7 +50,7 @@ open class KVKLogger {
     
     private func sourceFileName(filePath: String) -> String {
         let components = filePath.components(separatedBy: "/")
-        return components.isEmpty ? "" : components.last!
+        return components.isEmpty ? "" : (components.last ?? "")
     }
     
     private func printLog(_ items: Any...,

@@ -8,13 +8,17 @@
 import SwiftUI
 
 public struct KVKLoggerView: View {
-    let persistenceContainer = KVKPersistenceСontroller.shared
+    private let persistenceContainer = KVKPersistenceСontroller.shared
+    @Environment (\.scenePhase) private var scenePhase
     
     public init() {}
     
     public var body: some View {
         KVKLoggerProxyView()
-            .environment(\.managedObjectContext, persistenceContainer.container.viewContext)
+            .environment(\.managedObjectContext, persistenceContainer.viewContext)
+            .onChange(of: scenePhase) { (_) in
+                persistenceContainer.viewContext.saveContext()
+            }
     }
 }
 
@@ -22,9 +26,9 @@ struct KVKLoggerProxyView: View {
     
     @Environment (\.managedObjectContext) private var viewContext
     @Environment (\.dismiss) private var dismiss
-    @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \ItemLog.createdAt_, ascending: true)],
-                  animation: .default)
+    @FetchRequest(fetchRequest: ItemLog.fecth(), animation: .default)
     private var logs: FetchedResults<ItemLog>
+    @ObservedObject private var vm = KVKLoggerVM()
     
     var body: some View {
         navigationView
@@ -66,10 +70,11 @@ struct KVKLoggerProxyView: View {
             }
             .task {
                 withAnimation {
-                    proxy.scrollTo(logs.endIndex - 1)
+                    proxy.scrollTo(logs.last?.id)
                 }
             }
             .padding([.leading, .trailing], 5)
+            .searchable(text: $vm.query, placement: .navigationBarDrawer(displayMode: .always))
             .navigationTitle("Console")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -80,6 +85,14 @@ struct KVKLoggerProxyView: View {
                         Image(systemName: "xmark.circle")
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                    }
+
+                }
             }
         }
     }
@@ -88,14 +101,22 @@ struct KVKLoggerProxyView: View {
 
 struct SwiftUIView_Previews: PreviewProvider {
     static var previews: some View {
-        KVKLogger.shared.log("Test description")
-        KVKLogger.shared.log("Test description", status: .error)
-        KVKLogger.shared.log("Test description", status: .verbose)
+        let result = KVKPersistenceСontroller(inMemory: true)
+        let viewContext = result.viewContext
+        for _ in 0..<10 {
+            let newItem = ItemLog(context: viewContext)
+            newItem.createdAt = Date()
+            newItem.status = KVKStatus.info
+            newItem.type = KVKLogType.debug
+            newItem.details = "\(#file)\n\(#function)\n\(#line)"
+            newItem.items = "Test description log"
+        }
+        viewContext.saveContext()
         return Group {
             KVKLoggerProxyView()
             KVKLoggerProxyView()
                 .preferredColorScheme(.dark)
         }
-        .environment(\.managedObjectContext, KVKPersistenceСontroller.preview.container.viewContext)
+        .environment(\.managedObjectContext, viewContext)
     }
 }

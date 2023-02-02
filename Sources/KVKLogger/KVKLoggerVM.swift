@@ -9,6 +9,6 @@ import SwiftUI
 
 final class KVKLoggerVM: ObservableObject {
     
-    @Published var logs: [ItemLog] = []
+    @Published var query = ""
     
 }

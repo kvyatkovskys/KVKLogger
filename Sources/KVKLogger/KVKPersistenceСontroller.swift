@@ -11,27 +11,11 @@ struct KVKPersistenceСontroller {
     
     static let shared = KVKPersistenceСontroller()
     
-    static var preview: KVKPersistenceСontroller = {
-        let result = KVKPersistenceСontroller(inMemory: true)
-        let viewContext = result.container.viewContext
-        for _ in 0..<10 {
-            let newItem = ItemLog(context: viewContext)
-            newItem.createdAt_ = Date()
-            newItem.status_ = KVKStatus.info.rawValue
-            newItem.type_ = KVKLogType.debug.rawValue
-            newItem.details_ = "Test details\nnew line\nfunction"
-            newItem.items_ = "Test description log".data(using: .utf8)
-        }
-        do {
-            try viewContext.save()
-        } catch {
-            let nsError = error as NSError
-            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-        }
-        return result
-    }()
-    
     let container: NSPersistentContainer
+    
+    var viewContext: NSManagedObjectContext {
+        container.viewContext
+    }
     
     private let dbName = "ConsoleDB"
     
@@ -55,6 +39,21 @@ struct KVKPersistenceСontroller {
             if let error = error as? NSError {
                 fatalError("Unresolved error \(error), \(error.userInfo)")
             }
+        }
+    }
+    
+}
+
+extension NSManagedObjectContext {
+    
+    func saveContext() {
+        guard hasChanges else { return }
+        
+        do {
+            try save()
+        } catch {
+            let nsError = error as NSError
+            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
         }
     }
     
