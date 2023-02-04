@@ -30,9 +30,19 @@ final class KVKLoggerVM: ObservableObject {
         return predicates
     }
     
+    func copyLog(_ log: ItemLog) {
+        UIPasteboard.general.string = log.copyTxt
+    }
+    
     func getCurateItems() -> [CurateContainer] {
         [CurateContainer(item: .groupBy,
-                         subItems: [.date, .status, .type])]
+                         subItems: CurateSubItem.allCases)]
+    }
+    
+    func getSettingItems() -> [SettingContainer] {
+        [SettingContainer(item: .clearBySchedule,
+                          subItems: SettingSubItem.allCases),
+         SettingContainer(item: .clearAll)]
     }
     
 }

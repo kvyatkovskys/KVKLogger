@@ -12,7 +12,30 @@ struct KVKLogDetailView: View {
     @ObservedObject var log: ItemLog
     
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        ScrollView {
+            VStack(spacing: 5) {
+                Text(log.items)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if let json = log.networkJson {
+                    Text(json)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("Detail Log")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    UIPasteboard.general.string = log.copyTxt
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                }
+
+            }
+        }
     }
 }
 
@@ -25,7 +48,10 @@ struct KVKLogDetailView_Previews: PreviewProvider {
         newItem3.type = .network
         newItem3.logType = KVKLogType.print
         newItem3.items = "Test description network"
-        return KVKLogDetailView(log: newItem3)
-            .environment(\.managedObjectContext, viewContext)
+        return NavigationView {
+            KVKLogDetailView(log: newItem3)
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
+        .environment(\.managedObjectContext, viewContext)
     }
 }

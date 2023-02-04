@@ -30,6 +30,11 @@ struct KVKLoggerProxyView: View {
     private var logs: FetchedResults<ItemLog>
     private var selectedLog: ItemLog?
     @ObservedObject private var vm = KVKLoggerVM()
+    @State private var selectedClearBy: SettingSubItem?
+    
+    init() {
+        _selectedClearBy = State(initialValue: KVKSharedData.shared.clearBy)
+    }
     
     var body: some View {
         navigationView
@@ -88,7 +93,13 @@ struct KVKLoggerProxyView: View {
                     Image(systemName: "xmark.circle")
                 }
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                if #available(iOS 16.0, *) {
+                    settingsMenu
+                        .menuOrder(.fixed)
+                } else {
+                    settingsMenu
+                }
                 Menu {
                     ForEach(vm.getCurateItems()) { (item) in
                         Menu("\(item.item.title) \(vm.selectedGroupBy?.title ?? "")") {
@@ -110,6 +121,33 @@ struct KVKLoggerProxyView: View {
                     Image(systemName: "line.3.horizontal.decrease.circle")
                 }
             }
+        }
+    }
+    
+    private var settingsMenu: some View {
+        Menu {
+            ForEach(vm.getSettingItems()) { (item) in
+                switch item.item {
+                case .clearBySchedule:
+                    Menu {
+                        Picker("", selection: $selectedClearBy) {
+                            ForEach(item.subItems ?? []) { (subItem) in
+                                Text(subItem.title)
+                            }
+                        }
+                    } label: {
+                        Text(item.item.title)
+                    }
+                case .clearAll:
+                    Button(role: .destructive) {
+                        KVKPersistenceСontroller.shared.deleteAll()
+                    } label: {
+                        Text(item.item.title)
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "gear")
         }
     }
     
@@ -148,7 +186,7 @@ struct KVKLoggerProxyView: View {
         }
         .contextMenu {
             Button {
-                
+                vm.copyLog(log)
             } label: {
                 Label("Copy", systemImage: "doc.on.doc")
             }

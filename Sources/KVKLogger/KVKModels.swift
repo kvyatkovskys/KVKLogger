@@ -111,23 +111,6 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
         }
     }
     
-    public var systemIcon: String {
-        switch self {
-        case .custom:
-            return "🟢"
-        case .info:
-            return "exclamationmark.triangle"
-        case .error:
-            return "❌"
-        case .debug:
-            return "🔵"
-        case .warning:
-            return "⚠️"
-        case .verbose:
-            return "🔍"
-        }
-    }
-    
     public func hash(into hasher: inout Hasher) {
         hasher.combine(rawValue)
     }
@@ -138,6 +121,62 @@ public enum KVKLogType: String {
 }
 
 // MARK: available in module
+
+enum SettingItem: Int, Identifiable {
+    case clearAll, clearBySchedule
+    
+    var id: Int {
+        rawValue
+    }
+    
+    var title: String {
+        switch self {
+        case .clearAll:
+            return "Clear All"
+        case .clearBySchedule:
+            return "Clear by schedule"
+        }
+    }
+    
+    var tint: Color {
+        switch self {
+        case .clearAll:
+            return Color(uiColor: .systemRed)
+        case .clearBySchedule:
+            return Color(uiColor: .black)
+        }
+    }
+}
+
+enum SettingSubItem: String, Identifiable, CaseIterable {
+    case everyDay, everyWeek, everyMonth, everyYear
+    
+    var id: SettingSubItem {
+        self
+    }
+    
+    var title: String {
+        switch self {
+        case .everyDay:
+            return "Every day"
+        case .everyWeek:
+            return "Every week"
+        case .everyMonth:
+            return "Every month"
+        case .everyYear:
+            return "Every year"
+        }
+    }
+}
+
+struct SettingContainer: Identifiable {
+    let item: SettingItem
+    var subItems: [SettingSubItem]?
+    
+    var id: Int {
+        item.id
+    }
+}
 
 enum ItemLogType: String {
     case network, common
@@ -160,7 +199,7 @@ enum CurateItem: Int, Identifiable {
     }
 }
 
-enum CurateSubItem: Int, Identifiable {
+enum CurateSubItem: Int, Identifiable, CaseIterable {
     case status, date, type
     
     var id: CurateSubItem {
@@ -202,6 +241,12 @@ extension ItemLog {
             offsets.map { items[$0] }.forEach(context.delete)
             context.saveContext()
         }
+    }
+    
+    func delete(for item: ItemLog) {
+        let context = item.managedObjectContext
+        context?.delete(item)
+        context?.saveContext()
     }
     
     var status: KVKStatus {
@@ -257,6 +302,20 @@ extension ItemLog {
         bcf.allowedUnits = [.useMB, .useBytes, .useKB]
         bcf.countStyle = .file
         return bcf.string(fromByteCount: Int64(data?.count ?? 0))
+    }
+    
+    var networkJson: String? {
+        guard let dt = data else { return nil }
+        
+        guard let json = try? JSONSerialization.jsonObject(with: dt, options: [.mutableLeaves]) else {
+            return String(data: dt, encoding: .utf8)
+        }
+        
+        return String(describing: json)
+    }
+    
+    var copyTxt: String {
+        return items + "\n" + (details ?? "")
     }
     
 }

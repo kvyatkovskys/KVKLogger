@@ -42,6 +42,17 @@ struct KVKPersistenceСontroller {
         }
     }
     
+    func deleteAll() {
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = ItemLog.fetchRequest()
+        let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        do {
+            _ = try viewContext.execute(batchDeleteRequest)
+        } catch {
+            let nsError = error as NSError
+            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+        }
+    }
+    
 }
 
 extension NSManagedObjectContext {
