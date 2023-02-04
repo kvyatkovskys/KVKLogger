@@ -18,7 +18,7 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Menu("Status of error") {
+            Menu("Status of error: \(selectedStatus.rawValue)") {
                 Picker("", selection: $selectedStatus) {
                     ForEach(statuses) { (status) in
                         Text(status.title)

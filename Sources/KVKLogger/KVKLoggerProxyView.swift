@@ -27,6 +27,8 @@ struct KVKLoggerProxyView: View {
     @Environment (\.managedObjectContext) private var viewContext
     @Environment (\.dismiss) private var dismiss
     @FetchRequest(fetchRequest: ItemLog.fecth(), animation: .default)
+    //@SectionedFetchRequest(sectionIdentifier: \.status.rawValue, sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)])
+    //private var sections: SectionedFetchResults<String, ItemLog>
     private var logs: FetchedResults<ItemLog>
     private var selectedLog: ItemLog?
     @ObservedObject private var vm = KVKLoggerVM()
@@ -67,7 +69,7 @@ struct KVKLoggerProxyView: View {
                         .tint(Color(uiColor: .black))
                     } else {
                         NavigationLink {
-                            
+                            KVKLogDetailView(log: log)
                         } label: {
                             getLogView(log)
                         }
@@ -82,6 +84,9 @@ struct KVKLoggerProxyView: View {
                     placement: .navigationBarDrawer(displayMode: .always))
         .onChange(of: vm.query, perform: { (newValue) in
             logs.nsPredicate = vm.getPredicatesByQuery(newValue)
+        })
+        .onChange(of: vm.selectedGroupBy, perform: { (newValue) in
+            logs.nsPredicate = vm.getPredicateByCurate(newValue)
         })
         .navigationTitle("Console")
         .navigationBarTitleDisplayMode(.inline)
@@ -102,19 +107,26 @@ struct KVKLoggerProxyView: View {
                 }
                 Menu {
                     ForEach(vm.getCurateItems()) { (item) in
-                        Menu("\(item.item.title) \(vm.selectedGroupBy?.title ?? "")") {
-                            ForEach(item.subItems) { (subItem) in
-                                Button {
-                                    vm.selectedGroupBy = subItem
-                                } label: {
-                                    HStack {
-                                        Text(subItem.title)
-                                        if vm.selectedGroupBy == subItem {
-                                            Image(systemName: "checkmark")
-                                        }
-                                    }
+                        switch item.item {
+                        case .groupBy:
+                            Picker("\(item.item.title) \(vm.selectedGroupBy.title)",
+                                   selection: $vm.selectedGroupBy) {
+                                ForEach(item.subItems) { (subItem) in
+                                    Text(subItem.title)
                                 }
-                            }
+                            }.pickerStyle(.menu)
+                        case .filterBy:
+                            Picker("\(item.item.title) \(vm.selectedFilterBy.title)",
+                                   selection: $vm.selectedFilterBy) {
+                                ForEach(item.subItems) { (subItem) in
+                                    Text(subItem.title)
+                                }
+                            }.pickerStyle(.menu)
+                        }
+                    }
+                    if vm.selectedFilterBy != .none || vm.selectedGroupBy != .none {
+                        Button("Reset", role: .destructive) {
+                            vm.selectedFilterBy = .none
                         }
                     }
                 } label: {

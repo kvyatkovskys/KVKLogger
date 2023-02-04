@@ -199,8 +199,8 @@ enum CurateItem: Int, Identifiable {
     }
 }
 
-enum CurateSubItem: Int, Identifiable, CaseIterable {
-    case status, date, type
+enum CurateSubItem: String, Identifiable, CaseIterable {
+    case status, date, type, reset, none
     
     var id: CurateSubItem {
         self
@@ -214,6 +214,10 @@ enum CurateSubItem: Int, Identifiable, CaseIterable {
             return "Date"
         case .type:
             return "Type"
+        case .reset:
+            return "Reset"
+        default:
+            return ""
         }
     }
 }

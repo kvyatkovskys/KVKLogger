@@ -10,7 +10,8 @@ import SwiftUI
 final class KVKLoggerVM: ObservableObject {
     
     @Published var query = ""
-    @Published var selectedGroupBy: CurateSubItem?
+    @Published var selectedGroupBy: CurateSubItem = .none
+    @Published var selectedFilterBy: CurateSubItem = .none
     
     func getPredicatesByQuery(_ query: String) -> NSPredicate? {
         guard !query.isEmpty else { return nil }
@@ -30,13 +31,26 @@ final class KVKLoggerVM: ObservableObject {
         return predicates
     }
     
+    func getPredicateByCurate(_ curate: CurateSubItem) -> NSPredicate? {
+//        switch curate {
+//        case .status:
+//            return NSPredicate(format: "", curate.)
+//        case .date:
+//            <#code#>
+//        case .type:
+//            <#code#>
+//        default:
+            return nil
+      //  }
+    }
+    
     func copyLog(_ log: ItemLog) {
         UIPasteboard.general.string = log.copyTxt
     }
     
     func getCurateItems() -> [CurateContainer] {
-        [CurateContainer(item: .groupBy,
-                         subItems: CurateSubItem.allCases)]
+        [CurateContainer(item: .filterBy,
+                         subItems: [.status, .type, .date])]
     }
     
     func getSettingItems() -> [SettingContainer] {
