@@ -111,6 +111,23 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
         }
     }
     
+    public var systemIcon: String {
+        switch self {
+        case .custom:
+            return "🟢"
+        case .info:
+            return "exclamationmark.triangle"
+        case .error:
+            return "❌"
+        case .debug:
+            return "🔵"
+        case .warning:
+            return "⚠️"
+        case .verbose:
+            return "🔍"
+        }
+    }
+    
     public func hash(into hasher: inout Hasher) {
         hasher.combine(rawValue)
     }
@@ -120,12 +137,63 @@ public enum KVKLogType: String {
     case os, debug, print
 }
 
+// MARK: available in module
+
+enum ItemLogType: String {
+    case network, common
+}
+
+enum CurateItem: Int, Identifiable {
+    case groupBy, filterBy
+    
+    var id: Int {
+        rawValue
+    }
+    
+    var title: String {
+        switch self {
+        case .filterBy:
+            return "Filter by:"
+        case .groupBy:
+            return "Group by:"
+        }
+    }
+}
+
+enum CurateSubItem: Int, Identifiable {
+    case status, date, type
+    
+    var id: CurateSubItem {
+        self
+    }
+    
+    var title: String {
+        switch self {
+        case .status:
+            return "Status"
+        case .date:
+            return "Date"
+        case .type:
+            return "Type"
+        }
+    }
+}
+
+struct CurateContainer: Identifiable {
+    let item: CurateItem
+    let subItems: [CurateSubItem]
+    
+    var id: Int {
+        item.id
+    }
+}
+
 extension ItemLog {
     
     static func fecth() -> NSFetchRequest<ItemLog> {
         let request = NSFetchRequest<ItemLog>(entityName: self.description())
         request.predicate = NSPredicate(value: true)
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \ItemLog.createdAt_, ascending: true)]
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \ItemLog.createdAt_, ascending: false)]
         return request
     }
     
@@ -144,10 +212,18 @@ extension ItemLog {
         set { status_ = newValue.rawValue }
     }
     
-    var type: KVKLogType {
+    var logType: KVKLogType {
         get {
-            guard let item = type_ else { return .debug }
+            guard let item = logType_ else { return .debug }
             return KVKLogType(rawValue: item) ?? .debug
+        }
+        set { logType_ = newValue.rawValue }
+    }
+    
+    var type: ItemLogType {
+        get {
+            guard let item = type_ else { return .common }
+            return ItemLogType(rawValue: item) ?? .common
         }
         set { type_ = newValue.rawValue }
     }
@@ -167,12 +243,20 @@ extension ItemLog {
     }
     
     var items: String {
-        get {
-            items_ ?? ""
-        }
-        set {
-            items_ = newValue
-        }
+        get { items_ ?? "" }
+        set { items_ = newValue }
+    }
+    
+    var data: Data? {
+        get { data_ }
+        set { data_ = newValue }
+    }
+    
+    var size: String {
+        let bcf = ByteCountFormatter()
+        bcf.allowedUnits = [.useMB, .useBytes, .useKB]
+        bcf.countStyle = .file
+        return bcf.string(fromByteCount: Int64(data?.count ?? 0))
     }
     
 }

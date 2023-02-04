@@ -28,6 +28,7 @@ struct KVKLoggerProxyView: View {
     @Environment (\.dismiss) private var dismiss
     @FetchRequest(fetchRequest: ItemLog.fecth(), animation: .default)
     private var logs: FetchedResults<ItemLog>
+    private var selectedLog: ItemLog?
     @ObservedObject private var vm = KVKLoggerVM()
     
     var body: some View {
@@ -38,6 +39,9 @@ struct KVKLoggerProxyView: View {
         if #available(iOS 16.0, *) {
             return NavigationStack {
                 bodyView
+                    .navigationDestination(for: ItemLog.self) { (log) in
+                        KVKLogDetailView(log: log)
+                    }
             }
         } else {
             return NavigationView {
@@ -48,69 +52,132 @@ struct KVKLoggerProxyView: View {
     }
     
     private var bodyView: some View {
-        ScrollViewReader { (proxy) in
-            ScrollView {
-                ForEach(logs) { (log) in
-                    HStack {
-                        Text(log.status.icon)
-                        VStack(alignment: .leading) {
-                            Text(log.items)
-                            if let details = log.details {
-                                Text(details)
-                            }
-                            Text(log.formattedCreatedAt)
-                                .foregroundColor(Color(uiColor: .systemGray))
-                                .font(.subheadline)
+        List {
+            ForEach(logs) { (log) in
+                if log.type == .network {
+                    if #available(iOS 16.0, *) {
+                        NavigationLink(value: log) {
+                            getLogView(log)
                         }
-                        Spacer()
+                        .tint(Color(uiColor: .black))
+                    } else {
+                        NavigationLink {
+                            
+                        } label: {
+                            getLogView(log)
+                        }
                     }
-                    .id(log.id)
-                    .padding(5)
+                } else {
+                    getLogView(log)
                 }
             }
-            .task {
-                withAnimation {
-                    proxy.scrollTo(logs.last?.id)
+        }
+        .listStyle(PlainListStyle())
+        .searchable(text: $vm.query,
+                    placement: .navigationBarDrawer(displayMode: .always))
+        .onChange(of: vm.query, perform: { (newValue) in
+            logs.nsPredicate = vm.getPredicatesByQuery(newValue)
+        })
+        .navigationTitle("Console")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle")
                 }
             }
-            .padding([.leading, .trailing], 5)
-            .searchable(text: $vm.query, placement: .navigationBarDrawer(displayMode: .always))
-            .navigationTitle("Console")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle")
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    ForEach(vm.getCurateItems()) { (item) in
+                        Menu("\(item.item.title) \(vm.selectedGroupBy?.title ?? "")") {
+                            ForEach(item.subItems) { (subItem) in
+                                Button {
+                                    vm.selectedGroupBy = subItem
+                                } label: {
+                                    HStack {
+                                        Text(subItem.title)
+                                        if vm.selectedGroupBy == subItem {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                    }
-
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
                 }
             }
         }
     }
     
+    private func getLogView(_ log: ItemLog) -> some View {
+        HStack {
+            if log.type == .common {
+                Text(log.status.icon)
+            } else {
+                Image(systemName: "network")
+                    .resizable()
+                    .foregroundColor(Color(uiColor: .systemBlue))
+                    .frame(width: 20, height: 20)
+            }
+            VStack(alignment: .leading, spacing: 5) {
+                Text(log.items)
+                    .lineLimit(log.type == .network ? 10 : 0)
+                if let details = log.details {
+                    Text(details)
+                }
+                if log.type == .network {
+                    HStack {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .resizable()
+                            .foregroundColor(Color(uiColor: .systemGreen))
+                            .frame(width: 15, height: 15)
+                        Text(log.size)
+                    }
+                }
+                HStack {
+                    Text(log.formattedCreatedAt)
+                }
+                .foregroundColor(Color(uiColor: .systemGray))
+                .font(.subheadline)
+            }
+            Spacer()
+        }
+        .contextMenu {
+            Button {
+                
+            } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+
+        }
+    }
 }
 
-struct SwiftUIView_Previews: PreviewProvider {
+struct KVKLoggerView_Previews: PreviewProvider {
     static var previews: some View {
         let result = KVKPersistenceСontroller(inMemory: true)
         let viewContext = result.viewContext
-        for _ in 0..<10 {
-            let newItem = ItemLog(context: viewContext)
-            newItem.createdAt = Date()
-            newItem.status = KVKStatus.info
-            newItem.type = KVKLogType.debug
-            newItem.details = "\(#file)\n\(#function)\n\(#line)"
-            newItem.items = "Test description log"
-        }
+        let newItem1 = ItemLog(context: viewContext)
+        newItem1.createdAt = Date()
+        newItem1.status = KVKStatus.info
+        newItem1.logType = KVKLogType.debug
+        newItem1.items = String(describing: "Test description log")
+        let newItem2 = ItemLog(context: viewContext)
+        newItem2.createdAt = Date()
+        newItem2.status = KVKStatus.verbose
+        newItem2.logType = KVKLogType.print
+        newItem2.details = "\(#file)\n\(#function)\n\(#line)"
+        newItem2.items = "Test description log"
+        let newItem3 = ItemLog(context: viewContext)
+        newItem3.createdAt = Date()
+        newItem3.data = "Test response".data(using: .utf8)
+        newItem3.type = .network
+        newItem3.logType = KVKLogType.print
+        newItem3.items = "Test description network"
         viewContext.saveContext()
         return Group {
             KVKLoggerProxyView()

@@ -18,14 +18,22 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Picker("Status of Error", selection: $selectedStatus) {
-                ForEach(statuses) { (status) in
-                    Text(status.title)
+            Menu("Status of error") {
+                Picker("", selection: $selectedStatus) {
+                    ForEach(statuses) { (status) in
+                        Text(status.title)
+                    }
                 }
             }
-            Button("Print to console") {
-                KVKLogger.shared.log("test test test test test",
-                                     status: selectedStatus)
+            Button("Print common log") {
+                KVKLogger.shared.log(statuses, "Test",
+                                     status: selectedStatus,
+                                     type: .print)
+            }
+            Button("Print network request") {
+                KVKLogger.shared.network("Network Response",
+                                         data: "Test data".data(using: .utf8),
+                                         type: .debug)
             }
             Button("Show console (Modal)") {
                 isOpenedConsole = true
@@ -34,7 +42,7 @@ struct ContentView: View {
         .sheet(isPresented: $isOpenedConsole) {
             if #available(iOS 16.0, *) {
                 KVKLoggerView()
-                    .presentationDetents([.height(200), .medium, .large])
+                    .presentationDetents([.medium, .large])
             } else {
                 KVKLoggerView()
             }
