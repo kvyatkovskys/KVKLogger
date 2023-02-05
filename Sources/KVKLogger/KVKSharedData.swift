@@ -22,31 +22,29 @@ final class KVKSharedData {
         }
     }
     
-    var clearBy: SettingSubItem? {
+    var clearBy: SettingSubItem {
         get {
-            guard let item = clearBy_ else { return nil }
+            guard let item = clearBy_ else { return .everyWeek }
             
-            return SettingSubItem(rawValue: item)
+            return SettingSubItem(rawValue: item) ?? .everyWeek
         }
         set {
-            clearBy_ = newValue?.rawValue
+            clearBy_ = newValue.rawValue
         }
     }
     
-    var clearByDate: Date? {
+    var clearByDate: Date {
         get {
-            guard let dt = clearByDate_ else { return nil }
+            guard let dt = clearByDate_ else { return Date() }
             
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy.MM.dd"
-            return formatter.date(from: dt)
+            return formatter.date(from: dt) ?? Date()
         }
         set {
-            guard let dt = newValue else { return }
-            
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy.MM.dd"
-            clearByDate_ = formatter.string(from: dt)
+            clearByDate_ = formatter.string(from: newValue)
         }
     }
     

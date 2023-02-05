@@ -149,7 +149,7 @@ enum SettingItem: Int, Identifiable {
 }
 
 enum SettingSubItem: String, Identifiable, CaseIterable {
-    case everyDay, everyWeek, everyMonth, everyYear
+    case everyDay, everyWeek, everyMonth, everyYear, none
     
     var id: SettingSubItem {
         self
@@ -165,6 +165,8 @@ enum SettingSubItem: String, Identifiable, CaseIterable {
             return "Every month"
         case .everyYear:
             return "Every year"
+        case .none:
+            return "None"
         }
     }
 }
@@ -200,7 +202,7 @@ enum CurateItem: Int, Identifiable {
 }
 
 enum CurateSubItem: String, Identifiable, CaseIterable {
-    case status, date, type, reset, none
+    case status, date, type, reset
     
     var id: CurateSubItem {
         self
@@ -216,8 +218,6 @@ enum CurateSubItem: String, Identifiable, CaseIterable {
             return "Type"
         case .reset:
             return "Reset"
-        default:
-            return ""
         }
     }
 }
@@ -289,6 +289,10 @@ extension ItemLog {
     
     var formattedCreatedAt: String {
         createdAt.formatted(date: .abbreviated, time: .complete)
+    }
+    
+    var formattedShortCreatedAt: String {
+        createdAt.formatted(date: .abbreviated, time: .shortened)
     }
     
     var items: String {

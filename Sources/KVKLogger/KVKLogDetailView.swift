@@ -10,30 +10,51 @@ import SwiftUI
 struct KVKLogDetailView: View {
     
     @ObservedObject var log: ItemLog
+    @State private var isCopied = false
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 5) {
-                Text(log.items)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if let json = log.networkJson {
-                    Text(json)
+            VStack(spacing: 10) {
+                HStack {
+                    Text("REQUEST:")
+                        .foregroundColor(Color(uiColor: .systemGray))
                         .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(log.items)
+                        .multilineTextAlignment(.leading)
+                    Spacer()
+                }
+                if let json = log.networkJson {
+                    HStack {
+                        Text("SIZE:")
+                            .foregroundColor(Color(uiColor: .systemGray))
+                        Image(systemName: "arrow.down.circle.fill")
+                            .resizable()
+                            .foregroundColor(Color(uiColor: .systemGreen))
+                            .frame(width: 20, height: 20)
+                        Text(log.size)
+                        Spacer()
+                    }
+                    HStack {
+                        Text("RESULT:")
+                            .foregroundColor(Color(uiColor: .systemGray))
+                            .multilineTextAlignment(.leading)
+                        Text(json)
+                            .multilineTextAlignment(.leading)
+                        Spacer()
+                    }
                 }
             }
             .padding()
         }
-        .navigationTitle("Detail Log")
+        .navigationTitle(log.formattedShortCreatedAt)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     UIPasteboard.general.string = log.copyTxt
+                    isCopied.toggle()
                 } label: {
-                    Image(systemName: "doc.on.doc")
+                    Image(systemName: isCopied ? "doc.on.doc.fill" : "doc.on.doc")
                 }
-
             }
         }
     }

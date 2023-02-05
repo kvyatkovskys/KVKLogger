@@ -32,11 +32,7 @@ struct KVKLoggerProxyView: View {
     private var logs: FetchedResults<ItemLog>
     private var selectedLog: ItemLog?
     @ObservedObject private var vm = KVKLoggerVM()
-    @State private var selectedClearBy: SettingSubItem?
-    
-    init() {
-        _selectedClearBy = State(initialValue: KVKSharedData.shared.clearBy)
-    }
+    @State private var selectedClearBy = KVKSharedData.shared.clearBy
     
     var body: some View {
         navigationView
@@ -85,9 +81,9 @@ struct KVKLoggerProxyView: View {
         .onChange(of: vm.query, perform: { (newValue) in
             logs.nsPredicate = vm.getPredicatesByQuery(newValue)
         })
-        .onChange(of: vm.selectedGroupBy, perform: { (newValue) in
-            logs.nsPredicate = vm.getPredicateByCurate(newValue)
-        })
+//        .onChange(of: vm.selectedGroupBy, perform: { (newValue) in
+//            logs.nsPredicate = vm.getPredicateByCurate(newValue)
+//        })
         .navigationTitle("Console")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -105,33 +101,34 @@ struct KVKLoggerProxyView: View {
                 } else {
                     settingsMenu
                 }
-                Menu {
-                    ForEach(vm.getCurateItems()) { (item) in
-                        switch item.item {
-                        case .groupBy:
-                            Picker("\(item.item.title) \(vm.selectedGroupBy.title)",
-                                   selection: $vm.selectedGroupBy) {
-                                ForEach(item.subItems) { (subItem) in
-                                    Text(subItem.title)
-                                }
-                            }.pickerStyle(.menu)
-                        case .filterBy:
-                            Picker("\(item.item.title) \(vm.selectedFilterBy.title)",
-                                   selection: $vm.selectedFilterBy) {
-                                ForEach(item.subItems) { (subItem) in
-                                    Text(subItem.title)
-                                }
-                            }.pickerStyle(.menu)
-                        }
-                    }
-                    if vm.selectedFilterBy != .none || vm.selectedGroupBy != .none {
-                        Button("Reset", role: .destructive) {
-                            vm.selectedFilterBy = .none
-                        }
-                    }
-                } label: {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                }
+                // in progress
+//                Menu {
+//                    ForEach(vm.getCurateItems()) { (item) in
+//                        switch item.item {
+//                        case .groupBy:
+//                            Picker("\(item.item.title) \(vm.selectedGroupBy.title)",
+//                                   selection: $vm.selectedGroupBy) {
+//                                ForEach(item.subItems) { (subItem) in
+//                                    Text(subItem.title)
+//                                }
+//                            }.pickerStyle(.menu)
+//                        case .filterBy:
+//                            Picker("\(item.item.title) \(vm.selectedFilterBy.title)",
+//                                   selection: $vm.selectedFilterBy) {
+//                                ForEach(item.subItems) { (subItem) in
+//                                    Text(subItem.title)
+//                                }
+//                            }.pickerStyle(.menu)
+//                        }
+//                    }
+//                    if vm.selectedFilterBy != .none || vm.selectedGroupBy != .none {
+//                        Button("Reset", role: .destructive) {
+//                            vm.selectedFilterBy = .none
+//                        }
+//                    }
+//                } label: {
+//                    Image(systemName: "line.3.horizontal.decrease.circle")
+//                }
             }
         }
     }
@@ -175,7 +172,7 @@ struct KVKLoggerProxyView: View {
             }
             VStack(alignment: .leading, spacing: 5) {
                 Text(log.items)
-                    .lineLimit(log.type == .network ? 10 : 0)
+                    .lineLimit(log.type == .network ? 10 : nil)
                 if let details = log.details {
                     Text(details)
                 }
@@ -215,19 +212,19 @@ struct KVKLoggerView_Previews: PreviewProvider {
         newItem1.createdAt = Date()
         newItem1.status = KVKStatus.info
         newItem1.logType = KVKLogType.debug
-        newItem1.items = String(describing: "Test description log")
+        newItem1.items = String(describing: "Test description log Test description log Test description log")
         let newItem2 = ItemLog(context: viewContext)
         newItem2.createdAt = Date()
         newItem2.status = KVKStatus.verbose
         newItem2.logType = KVKLogType.print
         newItem2.details = "\(#file)\n\(#function)\n\(#line)"
-        newItem2.items = "Test description log"
+        newItem2.items = "Test description log Test description log Test description log"
         let newItem3 = ItemLog(context: viewContext)
         newItem3.createdAt = Date()
         newItem3.data = "Test response".data(using: .utf8)
         newItem3.type = .network
         newItem3.logType = KVKLogType.print
-        newItem3.items = "Test description network"
+        newItem3.items = "Test description network Test description network Test description network"
         viewContext.saveContext()
         return Group {
             KVKLoggerProxyView()

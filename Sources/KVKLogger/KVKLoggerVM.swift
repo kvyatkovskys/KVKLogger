@@ -10,8 +10,8 @@ import SwiftUI
 final class KVKLoggerVM: ObservableObject {
     
     @Published var query = ""
-    @Published var selectedGroupBy: CurateSubItem = .none
-    @Published var selectedFilterBy: CurateSubItem = .none
+    // @Published var selectedGroupBy: CurateSubItem = .none
+    // @Published var selectedFilterBy: CurateSubItem = .none
     
     func getPredicatesByQuery(_ query: String) -> NSPredicate? {
         guard !query.isEmpty else { return nil }
@@ -55,7 +55,7 @@ final class KVKLoggerVM: ObservableObject {
     
     func getSettingItems() -> [SettingContainer] {
         [SettingContainer(item: .clearBySchedule,
-                          subItems: SettingSubItem.allCases),
+                          subItems: [.everyDay, .everyWeek, .everyMonth, .everyYear]),
          SettingContainer(item: .clearAll)]
     }
     

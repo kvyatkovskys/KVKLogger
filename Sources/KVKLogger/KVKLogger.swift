@@ -30,7 +30,7 @@ open class KVKLogger {
             details = "file: \(sourceFileName(filePath: filename))\nline: \(line)\nfunction: \(funcName)"
         }
         let itemsTxt = items.reduce("") { (acc, item) in
-            acc + " " + String(describing: item)
+            acc + "\(item) "
         }
         handleLog(itemsTxt, originalItems: items, type: .common, status: status, logType: type, details: details)
     }
@@ -46,7 +46,7 @@ open class KVKLogger {
             details = "file: \(sourceFileName(filePath: filename))\nline: \(line)\nfunction: \(funcName)"
         }
         let itemsTxt = items.reduce("") { (acc, item) in
-            acc + " " + String(describing: item)
+            acc + "\(item) "
         }
         handleLog(itemsTxt, originalItems: items, data: data, type: .network, logType: type, details: details)
     }
