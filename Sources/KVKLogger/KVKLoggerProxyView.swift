@@ -43,7 +43,7 @@ struct KVKLoggerProxyView: View {
             return NavigationStack {
                 bodyView
                     .navigationDestination(for: ItemLog.self) { (log) in
-                        KVKLogDetailView(log: log)
+                        KVKLogNetworkDetailView(log: log)
                     }
             }
         } else {
@@ -65,7 +65,7 @@ struct KVKLoggerProxyView: View {
                         .tint(Color(uiColor: .black))
                     } else {
                         NavigationLink {
-                            KVKLogDetailView(log: log)
+                            KVKLogNetworkDetailView(log: log)
                         } label: {
                             getLogView(log)
                         }

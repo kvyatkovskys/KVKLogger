@@ -43,10 +43,17 @@ struct KVKPersistenceСontroller {
     }
     
     func deleteAll() {
-        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = ItemLog.fetchRequest()
-        let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
         do {
-            _ = try viewContext.execute(batchDeleteRequest)
+            let fetchRequest: NSFetchRequest<NSFetchRequestResult>
+            fetchRequest = NSFetchRequest(entityName: "ItemLog")
+            let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+            deleteRequest.resultType = .resultTypeObjectIDs
+            let batchDelete = try viewContext.execute(deleteRequest) as? NSBatchDeleteResult
+
+            guard let deleteResult = batchDelete?.result as? [NSManagedObjectID] else { return }
+
+            let deletedObjects: [String: Any] = [NSDeletedObjectsKey: deleteResult]
+            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: deletedObjects, into: [viewContext])
         } catch {
             let nsError = error as NSError
             fatalError("Unresolved error \(nsError), \(nsError.userInfo)")

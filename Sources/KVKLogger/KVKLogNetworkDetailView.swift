@@ -1,5 +1,5 @@
 //
-//  KVKLogDetailView.swift
+//  KVKLogNetworkDetailView.swift
 //  
 //
 //  Created by Sergei Kviatkovskii on 2/4/23.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct KVKLogDetailView: View {
+struct KVKLogNetworkDetailView: View {
     
     @ObservedObject var log: ItemLog
     @State private var isCopied = false
@@ -70,7 +70,7 @@ struct KVKLogDetailView_Previews: PreviewProvider {
         newItem3.logType = KVKLogType.print
         newItem3.items = "Test description network"
         return NavigationView {
-            KVKLogDetailView(log: newItem3)
+            KVKLogNetworkDetailView(log: newItem3)
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .environment(\.managedObjectContext, viewContext)
