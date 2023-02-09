@@ -17,7 +17,7 @@ struct KVKLogNetworkDetailView: View {
             VStack(spacing: 10) {
                 HStack {
                     Text("REQUEST:")
-                        .foregroundColor(Color(uiColor: .systemGray))
+                        .foregroundColor(.gray)
                         .multilineTextAlignment(.leading)
                     Text(log.items)
                         .multilineTextAlignment(.leading)
@@ -26,17 +26,17 @@ struct KVKLogNetworkDetailView: View {
                 if let json = log.networkJson {
                     HStack {
                         Text("SIZE:")
-                            .foregroundColor(Color(uiColor: .systemGray))
+                            .foregroundColor(.gray)
                         Image(systemName: "arrow.down.circle.fill")
                             .resizable()
-                            .foregroundColor(Color(uiColor: .systemGreen))
+                            .foregroundColor(.green)
                             .frame(width: 20, height: 20)
                         Text(log.size)
                         Spacer()
                     }
                     HStack {
                         Text("RESULT:")
-                            .foregroundColor(Color(uiColor: .systemGray))
+                            .foregroundColor(.gray)
                             .multilineTextAlignment(.leading)
                         Text(json)
                             .multilineTextAlignment(.leading)
@@ -48,14 +48,17 @@ struct KVKLogNetworkDetailView: View {
         }
         .navigationTitle(log.formattedShortCreatedAt)
         .toolbar {
+#if os(iOS)
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
+                    // in progress
                     UIPasteboard.general.string = log.copyTxt
                     isCopied.toggle()
                 } label: {
                     Image(systemName: isCopied ? "doc.on.doc.fill" : "doc.on.doc")
                 }
             }
+#endif
         }
     }
 }
@@ -66,13 +69,15 @@ struct KVKLogDetailView_Previews: PreviewProvider {
         let newItem3 = ItemLog(context: viewContext)
         newItem3.createdAt = Date()
         newItem3.data = "Test response".data(using: .utf8)
-        newItem3.type = .network
+        newItem3.type = ItemLogType.network
         newItem3.logType = KVKLogType.print
         newItem3.items = "Test description network"
         return NavigationView {
             KVKLogNetworkDetailView(log: newItem3)
         }
+#if os(iOS)
         .navigationViewStyle(StackNavigationViewStyle())
+#endif
         .environment(\.managedObjectContext, viewContext)
     }
 }

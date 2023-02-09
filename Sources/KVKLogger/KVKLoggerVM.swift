@@ -45,7 +45,11 @@ final class KVKLoggerVM: ObservableObject {
     }
     
     func copyLog(_ log: ItemLog) {
+#if os(macOS)
+        // in progress
+#else
         UIPasteboard.general.string = log.copyTxt
+#endif
     }
     
     func getCurateItems() -> [CurateContainer] {

@@ -47,10 +47,16 @@ struct KVKLoggerProxyView: View {
                     }
             }
         } else {
+#if os(macOS)
+            return NavigationView {
+                bodyView
+            }
+#else
             return NavigationView {
                 bodyView
             }
             .navigationViewStyle(StackNavigationViewStyle())
+#endif
         }
     }
     
@@ -62,7 +68,7 @@ struct KVKLoggerProxyView: View {
                         NavigationLink(value: log) {
                             getLogView(log)
                         }
-                        .tint(Color(uiColor: .black))
+                        .tint(.black)
                     } else {
                         NavigationLink {
                             KVKLogNetworkDetailView(log: log)
@@ -76,17 +82,24 @@ struct KVKLoggerProxyView: View {
             }
         }
         .listStyle(PlainListStyle())
+#if os(iOS)
         .searchable(text: $vm.query,
                     placement: .navigationBarDrawer(displayMode: .always))
+#else
+        .searchable(text: $vm.query)
+#endif
         .onChange(of: vm.query, perform: { (newValue) in
             logs.nsPredicate = vm.getPredicatesByQuery(newValue)
         })
-//        .onChange(of: vm.selectedGroupBy, perform: { (newValue) in
+        //        .onChange(of: vm.selectedGroupBy, perform: { (newValue) in
 //            logs.nsPredicate = vm.getPredicateByCurate(newValue)
-//        })
+        //        })
         .navigationTitle("Console")
+#if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+#endif
         .toolbar {
+#if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
                     dismiss()
@@ -130,6 +143,7 @@ struct KVKLoggerProxyView: View {
 //                    Image(systemName: "line.3.horizontal.decrease.circle")
 //                }
             }
+#endif
         }
     }
     
@@ -160,6 +174,7 @@ struct KVKLoggerProxyView: View {
         }
     }
     
+    @ViewBuilder
     private func getLogView(_ log: ItemLog) -> some View {
         HStack {
             if log.type == .common {
@@ -167,7 +182,7 @@ struct KVKLoggerProxyView: View {
             } else {
                 Image(systemName: "network")
                     .resizable()
-                    .foregroundColor(Color(uiColor: .systemBlue))
+                    .foregroundColor(.blue)
                     .frame(width: 20, height: 20)
             }
             VStack(alignment: .leading, spacing: 5) {
@@ -180,7 +195,7 @@ struct KVKLoggerProxyView: View {
                     HStack {
                         Image(systemName: "arrow.down.circle.fill")
                             .resizable()
-                            .foregroundColor(Color(uiColor: .systemGreen))
+                            .foregroundColor(.green)
                             .frame(width: 15, height: 15)
                         Text(log.size)
                     }
@@ -188,7 +203,7 @@ struct KVKLoggerProxyView: View {
                 HStack {
                     Text(log.formattedCreatedAt)
                 }
-                .foregroundColor(Color(uiColor: .systemGray))
+                .foregroundColor(.gray)
                 .font(.subheadline)
             }
             Spacer()
@@ -222,7 +237,7 @@ struct KVKLoggerView_Previews: PreviewProvider {
         let newItem3 = ItemLog(context: viewContext)
         newItem3.createdAt = Date()
         newItem3.data = "Test response".data(using: .utf8)
-        newItem3.type = .network
+        newItem3.type = ItemLogType.network
         newItem3.logType = KVKLogType.print
         newItem3.items = "Test description network Test description network Test description network"
         viewContext.saveContext()

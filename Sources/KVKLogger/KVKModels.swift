@@ -77,6 +77,7 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
         }
     }
     
+#if os(iOS)
     public var color: UIColor {
         switch self {
         case .custom:
@@ -93,6 +94,7 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
             return .systemTeal
         }
     }
+#endif
     
     public var icon: String {
         switch self {
@@ -141,11 +143,15 @@ enum SettingItem: Int, Identifiable {
     var tint: Color {
         switch self {
         case .clearAll:
-            return Color(uiColor: .systemRed)
+            return .red
         case .clearBySchedule:
-            return Color(uiColor: .black)
+            return .black
         }
     }
+}
+
+final class ItemLogProxy: ItemLog {
+    
 }
 
 enum SettingSubItem: String, Identifiable, CaseIterable {
