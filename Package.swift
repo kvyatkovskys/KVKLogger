@@ -24,10 +24,8 @@ let package = Package(
             dependencies: [],
             path: "Sources",
             exclude: [
-                "../DemoLogger"
-            ],
-            resources: [
-                .copy("KVKLogger/ConsoleDB.xcdatamodeld")
+                "../DemoLogger",
+                "KVKLogger/ConsoleDB.xcdatamodeld",
             ]
         ),
         .testTarget(

@@ -150,10 +150,6 @@ enum SettingItem: Int, Identifiable {
     }
 }
 
-final class ItemLogProxy: ItemLog {
-    
-}
-
 enum SettingSubItem: String, Identifiable, CaseIterable {
     case everyDay, everyWeek, everyMonth, everyYear, none
     
@@ -235,6 +231,23 @@ struct CurateContainer: Identifiable {
     var id: Int {
         item.id
     }
+}
+
+final class ItemLog: NSManagedObject {
+    
+    @NSManaged var createdAt_: Date?
+    @NSManaged var data_: Data?
+    @NSManaged var details_: String?
+    @NSManaged var items_: String?
+    @NSManaged var logType_: String?
+    @NSManaged var status_: String?
+    @NSManaged var type_: String?
+}
+
+extension ItemLog: Identifiable {
+    
+    var id: NSManagedObjectID { objectID }
+    
 }
 
 extension ItemLog {

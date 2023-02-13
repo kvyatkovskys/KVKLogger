@@ -21,7 +21,7 @@ open class KVKLogger {
     
     public func log(_ items: Any...,
                     status: KVKStatus = .info,
-                    type: KVKLogType = .debug,
+                    type: KVKLogType = .print,
                     filename: String = #file,
                     line: Int = #line,
                     funcName: String = #function) {
@@ -37,7 +37,7 @@ open class KVKLogger {
     
     public func network(_ items: Any...,
                         data: Data? = nil,
-                        type: KVKLogType = .debug,
+                        type: KVKLogType = .print,
                         filename: String? = nil,
                         line: Int? = nil,
                         funcName: String? = nil) {
