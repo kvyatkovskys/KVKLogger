@@ -25,7 +25,6 @@ let package = Package(
             path: "Sources",
             exclude: [
                 "../DemoLogger",
-                "KVKLogger/ConsoleDB.xcdatamodeld",
             ]
         ),
         .testTarget(

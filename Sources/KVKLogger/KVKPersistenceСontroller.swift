@@ -17,8 +17,6 @@ struct KVKPersistenceСontroller {
         container.viewContext
     }
     
-    private let dbName = "consoleDB"
-    
     init(inMemory: Bool = false) {
         if inMemory {
             container = NSPersistentContainer(name: dbName, managedObjectModel: KVKPersistenceСontroller.model)
@@ -60,34 +58,38 @@ struct KVKPersistenceСontroller {
         }
     }
     
+    private let dbName = "consoleDB.sqlite"
+    
     private var dataBaseURL: URL {
-        guard var url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
-            .first else {
-            return URL(fileURLWithPath: "/dev/null")
+        let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+        var resultURL: URL
+        if #available(iOS 16.0, *) {
+            resultURL = url?
+                .appending(path: "Logs", directoryHint: .isDirectory)
+                .appending(path: "com.github.kviatkovskii.kvkloader", directoryHint: .isDirectory) ?? URL(fileURLWithPath: "/dev/null")
+        } else {
+            resultURL = url?
+                .appendingPathComponent("Logs", isDirectory: true)
+                .appendingPathComponent("com.github.kviatkovskii.kvkloader", isDirectory: true) ?? URL(fileURLWithPath: "/dev/null")
+        }
+        
+        if !FileManager.default.fileExists(atPath: resultURL.path) {
+            try? FileManager.default.createDirectory(at: resultURL,
+                                                     withIntermediateDirectories: true,
+                                                     attributes: [:])
         }
         
         if #available(iOS 16.0, *) {
-            url = url
-                .appending(path: "Logs", directoryHint: .isDirectory)
-                .appending(path: "com.github.kviatkovskii.kvkloader", directoryHint: .isDirectory)
-                .appending(path: UUID().uuidString, directoryHint: .isDirectory)
-                .appending(component: dbName, directoryHint: .notDirectory)
+            resultURL = resultURL.appending(component: dbName)
         } else {
-            url = url
-                .appendingPathComponent("Logs", isDirectory: true)
-                .appendingPathComponent("com.github.kviatkovskii.kvkloader", isDirectory: true)
-                .appendingPathComponent(UUID().uuidString, isDirectory: true)
-                .appendingPathComponent(dbName, isDirectory: false)
+            resultURL = resultURL.appendingPathComponent(dbName, isDirectory: false)
         }
-        
-        return url.appendingPathExtension("sqlite")
+        return resultURL
     }
-    
+        
     private static let model: NSManagedObjectModel = {
         typealias Entity = NSEntityDescription
         typealias Attribute = NSAttributeDescription
-        // no need right now
-//        typealias Relationship = NSRelationshipDescription
         
         let itemLog = Entity(class: ItemLog.self)
         itemLog.properties = [
