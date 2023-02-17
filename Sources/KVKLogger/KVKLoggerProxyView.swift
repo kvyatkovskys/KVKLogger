@@ -25,11 +25,7 @@ public struct KVKLoggerView: View {
 struct KVKLoggerProxyView: View {
     
     @Environment (\.managedObjectContext) private var viewContext
-#if os(iOS)
-    @Environment (\.dismiss) private var dismiss
-#else
     @Environment (\.presentationMode) private var presentationMode
-#endif
     @FetchRequest(fetchRequest: ItemLog.fecth(), animation: .default)
     //@SectionedFetchRequest(sectionIdentifier: \.status.rawValue, sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)])
     //private var sections: SectionedFetchResults<String, ItemLog>
@@ -39,7 +35,20 @@ struct KVKLoggerProxyView: View {
     @State private var selectedClearBy = KVKSharedData.shared.clearBy
     
     var body: some View {
-        navigationView
+        if #available(iOS 15.0, macOS 12.0, *) {
+            navigationView
+#if os(iOS)
+                .searchable(text: $vm.query,
+                            placement: .navigationBarDrawer(displayMode: .always))
+#else
+                .searchable(text: $vm.query)
+#endif
+                .onChange(of: vm.query, perform: { (newValue) in
+                    logs.nsPredicate = vm.getPredicatesByQuery(newValue)
+                })
+        } else {
+            navigationView
+        }
     }
     
     private var navigationView: some View {
@@ -86,15 +95,6 @@ struct KVKLoggerProxyView: View {
             }
         }
         .listStyle(PlainListStyle())
-#if os(iOS)
-        .searchable(text: $vm.query,
-                    placement: .navigationBarDrawer(displayMode: .always))
-#endif
-        .onChange(of: vm.query, perform: { (newValue) in
-            if #available(iOS 15.0, macOS 12.0, *) {
-                logs.nsPredicate = vm.getPredicatesByQuery(newValue)
-            }
-        })
         .navigationTitle("Console")
 #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -103,11 +103,7 @@ struct KVKLoggerProxyView: View {
 #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
-#if os(iOS)
-                    dismiss()
-#else
-                    presentationMode.dismiss()
-#endif
+                    presentationMode.wrappedValue.dismiss()
                 } label: {
                     Image(systemName: "xmark.circle")
                 }
