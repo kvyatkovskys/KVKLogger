@@ -17,7 +17,7 @@ public struct KVKLoggerView: View {
         KVKLoggerProxyView()
             .environment(\.managedObjectContext, persistenceContainer.viewContext)
             .onChange(of: scenePhase) { (_) in
-                persistenceContainer.viewContext.saveContext()
+                persistenceContainer.save()
             }
     }
 }
@@ -232,24 +232,24 @@ struct KVKLoggerView_Previews: PreviewProvider {
     static var previews: some View {
         let result = KVKPersistenceСontroller(inMemory: true)
         let viewContext = result.viewContext
-        let newItem1 = ItemLog(context: viewContext)
+        let newItem1 = ItemLog(context: result.backgroundContext)
         newItem1.createdAt = Date()
         newItem1.status = KVKStatus.info
         newItem1.logType = KVKLogType.debug
         newItem1.items = String(describing: "Test description log Test description log Test description log")
-        let newItem2 = ItemLog(context: viewContext)
+        let newItem2 = ItemLog(context: result.backgroundContext)
         newItem2.createdAt = Date()
         newItem2.status = KVKStatus.verbose
         newItem2.logType = KVKLogType.print
         newItem2.details = "\(#file)\n\(#function)\n\(#line)"
         newItem2.items = "Test description log Test description log Test description log"
-        let newItem3 = ItemLog(context: viewContext)
+        let newItem3 = ItemLog(context: result.backgroundContext)
         newItem3.createdAt = Date()
         newItem3.data = "Test response".data(using: .utf8)
         newItem3.type = ItemLogType.network
         newItem3.logType = KVKLogType.print
         newItem3.items = "Test description network Test description network Test description network"
-        viewContext.saveContext()
+        result.save()
         return Group {
             KVKLoggerProxyView()
             KVKLoggerProxyView()

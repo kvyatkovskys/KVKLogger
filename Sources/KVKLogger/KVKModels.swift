@@ -343,14 +343,13 @@ extension ItemLog {
         return bcf.string(fromByteCount: Int64(data?.count ?? 0))
     }
     
-    var networkJson: String? {
-        guard let dt = data else { return nil }
+    func getNetworkJson() throws -> String {
+        guard let dt = data else { return "" }
         
         guard let json = try? JSONSerialization.jsonObject(with: dt, options: [.mutableLeaves]) else {
-            return String(data: dt, encoding: .utf8)
+            return String(data: dt, encoding: .utf8) ?? ""
         }
-        
-        return String(describing: json)
+        return "\(json)"
     }
     
     var copyTxt: String {

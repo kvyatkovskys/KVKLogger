@@ -12,12 +12,13 @@ struct KVKPersistenceСontroller {
     static let shared = KVKPersistenceСontroller()
     
     let container: NSPersistentContainer
-    
+    let backgroundContext: NSManagedObjectContext
     var viewContext: NSManagedObjectContext {
         container.viewContext
     }
     
     init(inMemory: Bool = false) {
+        let dbName = dataBaseURL.lastPathComponent
         if inMemory {
             container = NSPersistentContainer(name: dbName, managedObjectModel: KVKPersistenceСontroller.model)
             if #available(iOS 16.0, macOS 13.0, *) {
@@ -28,16 +29,21 @@ struct KVKPersistenceСontroller {
         } else {
             container = NSPersistentContainer(name: dbName, managedObjectModel: KVKPersistenceСontroller.model)
         }
-
+        
         let store = NSPersistentStoreDescription(url: dataBaseURL)
         container.persistentStoreDescriptions = [store]
-        container.viewContext.automaticallyMergesChangesFromParent = true
-        container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
         container.loadPersistentStores { (desc, error) in
             if let error = error as? NSError {
                 print("Unresolved error \(error), \(error.userInfo)")
             }
         }
+        container.viewContext.automaticallyMergesChangesFromParent = true
+        container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+        backgroundContext = container.newBackgroundContext()
+    }
+    
+    func save() {
+        backgroundContext.saveContext()
     }
     
     func deleteAll() {
@@ -57,10 +63,8 @@ struct KVKPersistenceСontroller {
             print("Unresolved error \(nsError), \(nsError.userInfo)")
         }
     }
-    
-    private let dbName = "consoleDB.sqlite"
-    
-    private var dataBaseURL: URL {
+        
+    private let dataBaseURL: URL = {
         let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
         var resultURL: URL
         if #available(iOS 16.0, macOS 13.0, *) {
@@ -80,12 +84,12 @@ struct KVKPersistenceСontroller {
         }
         
         if #available(iOS 16.0, macOS 13.0, *) {
-            resultURL = resultURL.appending(component: dbName)
+            resultURL = resultURL.appending(component: "consoleDB.sqlite")
         } else {
-            resultURL = resultURL.appendingPathComponent(dbName, isDirectory: false)
+            resultURL = resultURL.appendingPathComponent("consoleDB.sqlite", isDirectory: false)
         }
         return resultURL
-    }
+    }()
         
     private static let model: NSManagedObjectModel = {
         typealias Entity = NSEntityDescription
@@ -133,11 +137,13 @@ extension NSManagedObjectContext {
     func saveContext() {
         guard hasChanges else { return }
         
-        do {
-            try save()
-        } catch {
-            let nsError = error as NSError
-            print("Unresolved error \(nsError), \(nsError.userInfo)")
+        performAndWait { [weak self] in
+            do {
+                try self?.save()
+            } catch {
+                let nsError = error as NSError
+                print("Unresolved error \(nsError), \(nsError.userInfo)")
+            }
         }
     }
     

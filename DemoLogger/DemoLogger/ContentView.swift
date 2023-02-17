@@ -42,7 +42,7 @@ struct ContentView: View {
         .sheet(isPresented: $isOpenedConsole) {
             if #available(iOS 16.0, *) {
                 KVKLoggerView()
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.large])
             } else {
                 KVKLoggerView()
             }

@@ -10,7 +10,7 @@ import CoreData
 
 open class KVKLogger {
 
-    private let viewContext = KVKPersistenceСontroller.shared.viewContext
+    private let store = KVKPersistenceСontroller.shared
     
     public static let shared = KVKLogger()
     /// Debug Mode
@@ -18,6 +18,8 @@ open class KVKLogger {
     public var isDebugMode: Bool?
     
     @ObservedObject var vm = KVKLoggerVM()
+    
+    public init() {}
     
     public func log(_ items: Any...,
                     status: KVKStatus = .info,
@@ -59,7 +61,7 @@ open class KVKLogger {
                            logType: KVKLogType,
                            details: String?) {
         let date = Date()
-        let item = ItemLog(context: viewContext)
+        let item = ItemLog(context: store.backgroundContext)
         item.createdAt = date
         item.status_ = status?.rawValue
         item.logType = logType
@@ -67,7 +69,7 @@ open class KVKLogger {
         item.details = details
         item.items = items
         item.data = data
-        viewContext.saveContext()
+        store.save()
         
         if isDebugMode != false {
             printLog(originalItems, details: details, status: status, type: logType, date: date)

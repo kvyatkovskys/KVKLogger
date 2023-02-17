@@ -11,40 +11,36 @@ struct KVKLogNetworkDetailView: View {
     
     @ObservedObject var log: ItemLog
     @State private var isCopied = false
+    @State private var json = ""
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 10) {
+            LazyVStack(alignment: .leading, spacing: 10) {
+                Text("REQUEST:")
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.leading)
+                Text(log.items)
+                    .multilineTextAlignment(.leading)
                 HStack {
-                    Text("REQUEST:")
+                    Text("SIZE:")
                         .foregroundColor(.gray)
-                        .multilineTextAlignment(.leading)
-                    Text(log.items)
-                        .multilineTextAlignment(.leading)
+                    Image(systemName: "arrow.down.circle.fill")
+                        .resizable()
+                        .foregroundColor(.green)
+                        .frame(width: 20, height: 20)
+                    Text(log.size)
                     Spacer()
                 }
-                if let json = log.networkJson {
-                    HStack {
-                        Text("SIZE:")
-                            .foregroundColor(.gray)
-                        Image(systemName: "arrow.down.circle.fill")
-                            .resizable()
-                            .foregroundColor(.green)
-                            .frame(width: 20, height: 20)
-                        Text(log.size)
-                        Spacer()
-                    }
-                    HStack {
-                        Text("RESULT:")
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.leading)
-                        Text(json)
-                            .multilineTextAlignment(.leading)
-                        Spacer()
-                    }
-                }
+                Text("RESULT:")
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.leading)
+                Text(json)
+                    .multilineTextAlignment(.leading)
             }
             .padding()
+        }
+        .onAppear() {
+            prepareJson()
         }
         .navigationTitle(log.formattedShortCreatedAt)
         .toolbar {
@@ -61,14 +57,23 @@ struct KVKLogNetworkDetailView: View {
 #endif
         }
     }
+    
+    private func prepareJson() {
+        do {
+            json = try log.getNetworkJson()
+        } catch {
+            json = error.localizedDescription
+        }
+    }
+    
 }
 
 struct KVKLogDetailView_Previews: PreviewProvider {
     static var previews: some View {
-        let viewContext = KVKPersistenceСontroller(inMemory: true).viewContext
-        let newItem3 = ItemLog(context: viewContext)
+        let store = KVKPersistenceСontroller(inMemory: true)
+        let newItem3 = ItemLog(context: store.viewContext)
         newItem3.createdAt = Date()
-        newItem3.data = "Test response".data(using: .utf8)
+        newItem3.data = "Test response Test response".data(using: .utf8)
         newItem3.type = ItemLogType.network
         newItem3.logType = KVKLogType.print
         newItem3.items = "Test description network"
@@ -78,6 +83,6 @@ struct KVKLogDetailView_Previews: PreviewProvider {
 #if os(iOS)
         .navigationViewStyle(StackNavigationViewStyle())
 #endif
-        .environment(\.managedObjectContext, viewContext)
+        .environment(\.managedObjectContext, store.viewContext)
     }
 }
