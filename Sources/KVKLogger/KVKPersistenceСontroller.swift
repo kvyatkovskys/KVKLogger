@@ -35,7 +35,7 @@ struct KVKPersistenceСontroller {
         container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
         container.loadPersistentStores { (desc, error) in
             if let error = error as? NSError {
-                fatalError("Unresolved error \(error), \(error.userInfo)")
+                print("Unresolved error \(error), \(error.userInfo)")
             }
         }
     }
@@ -54,7 +54,7 @@ struct KVKPersistenceСontroller {
             NSManagedObjectContext.mergeChanges(fromRemoteContextSave: deletedObjects, into: [viewContext])
         } catch {
             let nsError = error as NSError
-            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+            print("Unresolved error \(nsError), \(nsError.userInfo)")
         }
     }
     
@@ -137,7 +137,7 @@ extension NSManagedObjectContext {
             try save()
         } catch {
             let nsError = error as NSError
-            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+            print("Unresolved error \(nsError), \(nsError.userInfo)")
         }
     }
     

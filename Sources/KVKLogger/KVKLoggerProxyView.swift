@@ -196,7 +196,7 @@ struct KVKLoggerProxyView: View {
             }
             VStack(alignment: .leading, spacing: 5) {
                 Text(log.items)
-                    .lineLimit(log.type == .network ? 10 : nil)
+                    .lineLimit(log.type == .network ? 8 : nil)
                 if let details = log.details {
                     Text(details)
                 }
