@@ -21,13 +21,6 @@ struct KVKPersistenceСontroller {
     
     init(inMemory: Bool = false) {
         if inMemory {
-//            guard let url = Bundle.module.url(forResource: dbName, withExtension: "momd") else {
-//                fatalError("Could not get URL for model: \(dbName)")
-//            }
-//            guard let model = NSManagedObjectModel(contentsOf: url) else {
-//                fatalError("Could not get model for: \(url)")
-//            }
-//
             container = NSPersistentContainer(name: dbName, managedObjectModel: KVKPersistenceСontroller.model)
             if #available(iOS 16.0, *) {
                 container.persistentStoreDescriptions.first!.url = URL(filePath: "/dev/null")
@@ -52,7 +45,7 @@ struct KVKPersistenceСontroller {
     func deleteAll() {
         do {
             let fetchRequest: NSFetchRequest<NSFetchRequestResult>
-            fetchRequest = NSFetchRequest(entityName: "KVKLogger.ItemLog")
+            fetchRequest = NSFetchRequest(entityName: ItemLog.entityName)
             let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
             deleteRequest.resultType = .resultTypeObjectIDs
             let batchDelete = try viewContext.execute(deleteRequest) as? NSBatchDeleteResult
@@ -117,7 +110,7 @@ extension NSEntityDescription {
     convenience init<T>(class customClass: T.Type) where T: NSManagedObject {
         self.init()
         name = String(describing: customClass)
-        managedObjectClassName = T.self.description()
+        managedObjectClassName = T.description()
     }
 }
 

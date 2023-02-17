@@ -252,8 +252,12 @@ extension ItemLog: Identifiable {
 
 extension ItemLog {
     
+    static var entityName: String {
+        "\(ItemLog.self)"
+    }
+    
     static func fecth() -> NSFetchRequest<ItemLog> {
-        let request = NSFetchRequest<ItemLog>(entityName: self.description())
+        let request = NSFetchRequest<ItemLog>(entityName: entityName)
         request.predicate = NSPredicate(value: true)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \ItemLog.createdAt_, ascending: false)]
         return request
