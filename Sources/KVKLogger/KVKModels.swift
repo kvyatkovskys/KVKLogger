@@ -311,11 +311,19 @@ extension ItemLog {
     }
     
     var formattedCreatedAt: String {
-        createdAt.formatted(date: .abbreviated, time: .complete)
+        if #available(iOS 15.0, macOS 12.0, *) {
+            return createdAt.formatted(date: .abbreviated, time: .complete)
+        } else {
+            return "in-progress"
+        }
     }
     
     var formattedShortCreatedAt: String {
-        createdAt.formatted(date: .abbreviated, time: .shortened)
+        if #available(iOS 15.0, macOS 12.0, *) {
+            return createdAt.formatted(date: .abbreviated, time: .shortened)
+        } else {
+            return "in-progress"
+        }
     }
     
     var items: String {

@@ -20,7 +20,7 @@ struct KVKPersistenceСontroller {
     init(inMemory: Bool = false) {
         if inMemory {
             container = NSPersistentContainer(name: dbName, managedObjectModel: KVKPersistenceСontroller.model)
-            if #available(iOS 16.0, *) {
+            if #available(iOS 16.0, macOS 13.0, *) {
                 container.persistentStoreDescriptions.first!.url = URL(filePath: "/dev/null")
             } else {
                 container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
@@ -63,7 +63,7 @@ struct KVKPersistenceСontroller {
     private var dataBaseURL: URL {
         let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
         var resultURL: URL
-        if #available(iOS 16.0, *) {
+        if #available(iOS 16.0, macOS 13.0, *) {
             resultURL = url?
                 .appending(path: "Logs", directoryHint: .isDirectory)
                 .appending(path: "com.github.kviatkovskii.kvkloader", directoryHint: .isDirectory) ?? URL(fileURLWithPath: "/dev/null")
@@ -79,7 +79,7 @@ struct KVKPersistenceСontroller {
                                                      attributes: [:])
         }
         
-        if #available(iOS 16.0, *) {
+        if #available(iOS 16.0, macOS 13.0, *) {
             resultURL = resultURL.appending(component: dbName)
         } else {
             resultURL = resultURL.appendingPathComponent(dbName, isDirectory: false)

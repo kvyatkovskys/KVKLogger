@@ -88,7 +88,14 @@ open class KVKLogger {
                           status: KVKStatus?,
                           type: KVKLogType,
                           date: Date) {
-        let iso8601Date = date.formatted(.iso8601)
+        let iso8601Date: String
+        if #available(iOS 15.0, macOS 12.0, *) {
+            iso8601Date = date.formatted(.iso8601)
+        } else {
+            // in-progress
+            iso8601Date = date.description
+        }
+        
         let icon: String
         if let status {
             icon = "\(status.icon) "

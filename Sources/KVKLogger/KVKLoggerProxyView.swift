@@ -25,7 +25,11 @@ public struct KVKLoggerView: View {
 struct KVKLoggerProxyView: View {
     
     @Environment (\.managedObjectContext) private var viewContext
+#if os(iOS)
     @Environment (\.dismiss) private var dismiss
+#else
+    @Environment (\.presentationMode) private var presentationMode
+#endif
     @FetchRequest(fetchRequest: ItemLog.fecth(), animation: .default)
     //@SectionedFetchRequest(sectionIdentifier: \.status.rawValue, sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)])
     //private var sections: SectionedFetchResults<String, ItemLog>
@@ -39,7 +43,7 @@ struct KVKLoggerProxyView: View {
     }
     
     private var navigationView: some View {
-        if #available(iOS 16.0, *) {
+        if #available(iOS 16.0, macOS 13.0, *) {
             return NavigationStack {
                 bodyView
                     .navigationDestination(for: ItemLog.self) { (log) in
@@ -64,7 +68,7 @@ struct KVKLoggerProxyView: View {
         List {
             ForEach(logs) { (log) in
                 if log.type == .network {
-                    if #available(iOS 16.0, *) {
+                    if #available(iOS 16.0, macOS 13.0, *) {
                         NavigationLink(value: log) {
                             getLogView(log)
                         }
@@ -85,15 +89,12 @@ struct KVKLoggerProxyView: View {
 #if os(iOS)
         .searchable(text: $vm.query,
                     placement: .navigationBarDrawer(displayMode: .always))
-#else
-        .searchable(text: $vm.query)
 #endif
         .onChange(of: vm.query, perform: { (newValue) in
-            logs.nsPredicate = vm.getPredicatesByQuery(newValue)
+            if #available(iOS 15.0, macOS 12.0, *) {
+                logs.nsPredicate = vm.getPredicatesByQuery(newValue)
+            }
         })
-        //        .onChange(of: vm.selectedGroupBy, perform: { (newValue) in
-//            logs.nsPredicate = vm.getPredicateByCurate(newValue)
-        //        })
         .navigationTitle("Console")
 #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -102,13 +103,17 @@ struct KVKLoggerProxyView: View {
 #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
+#if os(iOS)
                     dismiss()
+#else
+                    presentationMode.dismiss()
+#endif
                 } label: {
                     Image(systemName: "xmark.circle")
                 }
             }
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                if #available(iOS 16.0, *) {
+                if #available(iOS 16.0, macOS 13.0, *) {
                     settingsMenu
                         .menuOrder(.fixed)
                 } else {
@@ -162,10 +167,18 @@ struct KVKLoggerProxyView: View {
                         Text(item.item.title)
                     }
                 case .clearAll:
-                    Button(role: .destructive) {
-                        KVKPersistenceСontroller.shared.deleteAll()
-                    } label: {
-                        Text(item.item.title)
+                    if #available(iOS 15.0, macOS 12.0, *) {
+                        Button(role: .destructive) {
+                            KVKPersistenceСontroller.shared.deleteAll()
+                        } label: {
+                            Text(item.item.title)
+                        }
+                    } else {
+                        Button {
+                            KVKPersistenceСontroller.shared.deleteAll()
+                        } label: {
+                            Text(item.item.title)
+                        }
                     }
                 }
             }
