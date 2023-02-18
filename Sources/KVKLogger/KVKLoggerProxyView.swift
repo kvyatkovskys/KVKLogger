@@ -57,7 +57,7 @@ struct KVKLoggerProxyView: View {
                 bodyView
                     .toolbarBackground(.regularMaterial, for: .navigationBar)
                     .navigationDestination(for: ItemLog.self) { (log) in
-                        KVKLogNetworkDetailView(vm: KVKLogDetailVM(id: log.objectID))
+                        KVKLogNetworkDetailView(log: log)
                     }
             }
         } else {
@@ -85,7 +85,7 @@ struct KVKLoggerProxyView: View {
                         .tint(.black)
                     } else {
                         NavigationLink {
-                            KVKLogNetworkDetailView(vm: KVKLogDetailVM(id: log.objectID))
+                            KVKLogNetworkDetailView(log: log)
                         } label: {
                             getLogView(log)
                         }
