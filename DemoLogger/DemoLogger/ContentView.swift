@@ -31,9 +31,9 @@ struct ContentView: View {
                                      type: .print)
             }
             Button("Print network request") {
-                KVKLogger.shared.network("Network Response",
-                                         data: "Test data".data(using: .utf8),
-                                         type: .debug)
+                Task {
+                    await writeManyStringToLog()
+                }
             }
             Button("Show console (Modal)") {
                 isOpenedConsole = true
@@ -48,6 +48,18 @@ struct ContentView: View {
             }
         }
         .padding()
+    }
+    
+    func writeManyStringToLog() async {
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0 ..< 1000 {
+                group.addTask {
+                    await KVKLogger.shared.network("Network Response",
+                                                   data: "Test data".data(using: .utf8),
+                                                   type: .debug)
+                }
+            }
+        }
     }
 }
 
