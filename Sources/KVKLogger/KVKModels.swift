@@ -336,11 +336,13 @@ extension ItemLog {
         set { data_ = newValue }
     }
     
-    var size: String {
+    var size: String? {
+        guard let data else { return nil }
+        
         let bcf = ByteCountFormatter()
         bcf.allowedUnits = [.useMB, .useBytes, .useKB]
         bcf.countStyle = .file
-        return bcf.string(fromByteCount: Int64(data?.count ?? 0))
+        return bcf.string(fromByteCount: Int64(data.count))
     }
     
     func getNetworkJson() throws -> String {

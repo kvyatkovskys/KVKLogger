@@ -57,7 +57,7 @@ struct KVKLoggerProxyView: View {
                 bodyView
                     .toolbarBackground(.regularMaterial, for: .navigationBar)
                     .navigationDestination(for: ItemLog.self) { (log) in
-                        KVKLogNetworkDetailView(log: log)
+                        KVKLogNetworkDetailView(vm: KVKLogDetailVM(id: log.objectID))
                     }
             }
         } else {
@@ -85,7 +85,7 @@ struct KVKLoggerProxyView: View {
                         .tint(.black)
                     } else {
                         NavigationLink {
-                            KVKLogNetworkDetailView(log: log)
+                            KVKLogNetworkDetailView(vm: KVKLogDetailVM(id: log.objectID))
                         } label: {
                             getLogView(log)
                         }
@@ -201,13 +201,13 @@ struct KVKLoggerProxyView: View {
                 if let details = log.details {
                     Text(details)
                 }
-                if log.type == .network {
+                if log.type == .network, let size = log.size {
                     HStack {
                         Image(systemName: "arrow.down.circle.fill")
                             .resizable()
                             .foregroundColor(.green)
                             .frame(width: 15, height: 15)
-                        Text(log.size)
+                        Text(size)
                     }
                 }
                 HStack {
@@ -250,7 +250,7 @@ struct KVKLoggerView_Previews: PreviewProvider {
         newItem3.type = ItemLogType.network
         newItem3.logType = KVKLogType.print
         newItem3.items = "Test description network Test description network Test description network"
-        result.save()
+        result.backgroundContext.saveContext()
         return Group {
             KVKLoggerProxyView()
             KVKLoggerProxyView()

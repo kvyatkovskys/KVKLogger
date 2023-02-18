@@ -34,7 +34,7 @@ open class KVKLogger {
         let itemsTxt = items.reduce("") { (acc, item) in
             acc + "\(item) "
         }
-        handleLog(itemsTxt, originalItems: items, type: .common, status: status, logType: type, details: details)
+        handleLog(itemsTxt, type: .common, status: status, logType: type, details: details)
     }
     
     public func network(_ items: Any...,
@@ -50,11 +50,10 @@ open class KVKLogger {
         let itemsTxt = items.reduce("") { (acc, item) in
             acc + "\(item) "
         }
-        handleLog(itemsTxt, originalItems: items, data: data, type: .network, logType: type, details: details)
+        handleLog(itemsTxt, data: data, type: .network, logType: type, details: details)
     }
     
     private func handleLog(_ items: String,
-                           originalItems: Any,
                            data: Data? = nil,
                            type: ItemLogType,
                            status: KVKStatus? = nil,
@@ -72,10 +71,10 @@ open class KVKLogger {
         store.save()
         
         if isDebugMode != false {
-            printLog(originalItems, details: details, status: status, type: logType, date: date)
+            printLog(items, details: details, status: status, type: logType, date: date)
         } else {
 #if DEBUG
-        printLog(originalItems, details: details, status: status, type: logType, date: date)
+        printLog(items, details: details, status: status, type: logType, date: date)
 #endif
         }
     }
