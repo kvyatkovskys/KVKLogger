@@ -17,6 +17,8 @@ open class KVKLogger {
     /// if #DEBUG isn't setup in a project
     public var isDebugMode: Bool?
     
+    public var isEnableSaveIntoDB: Bool = true
+    
     @ObservedObject var vm = KVKLoggerVM()
     
     public init() {}
@@ -60,15 +62,17 @@ open class KVKLogger {
                            logType: KVKLogType,
                            details: String?) {
         let date = Date()
-        let item = ItemLog(context: store.backgroundContext)
-        item.createdAt = date
-        item.status_ = status?.rawValue
-        item.logType = logType
-        item.type = type
-        item.details = details
-        item.items = items
-        item.data = data
-        store.save()
+        if isEnableSaveIntoDB {
+            let item = ItemLog(context: store.backgroundContext)
+            item.createdAt = date
+            item.status_ = status?.rawValue
+            item.logType = logType
+            item.type = type
+            item.details = details
+            item.items = items
+            item.data = data
+            store.save()
+        }
         
         if isDebugMode != false {
             printLog(items, details: details, status: status, type: logType, date: date)

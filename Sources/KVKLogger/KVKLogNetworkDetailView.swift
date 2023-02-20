@@ -12,9 +12,17 @@ struct KVKLogNetworkDetailView: View {
     
     private let maxLimitCountInText = 50
     @State private var isCopied = false
-    @State private var resultLinelimit: Int? = 10
-    @State private var requestLinelimit: Int? = 10
+    @State private var text: String
     @ObservedObject var log: ItemLog
+    
+    init(log: ItemLog) {
+        self.log = log
+        var txtDetails = log.items
+        if let response = try? log.getNetworkJson(), !response.isEmpty {
+            txtDetails += "\n\n[RESULT]:\n\n\(response)"
+        }
+        text = txtDetails
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -30,46 +38,10 @@ struct KVKLogNetworkDetailView: View {
                     Spacer()
                 }
             }
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("REQUEST:")
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.leading)
-                    Text(log.items)
-                        .lineLimit(log.items.count <= maxLimitCountInText ? nil : requestLinelimit)
-                        .multilineTextAlignment(.leading)
-                    if log.items.count > maxLimitCountInText && requestLinelimit != nil {
-                        HStack {
-                            Spacer()
-                            Button("Expand Request") {
-                                requestLinelimit = nil
-                            }
-                            Spacer()
-                        }
-                        .padding()
-                    }
-                    if let json = try? log.getNetworkJson(), !json.isEmpty {
-                        VStack(alignment: .leading) {
-                            Text("RESULT:")
-                                .foregroundColor(.gray)
-                                .multilineTextAlignment(.leading)
-                            Text(json)
-                                .lineLimit(json.count <= maxLimitCountInText ? nil : resultLinelimit)
-                                .multilineTextAlignment(.leading)
-                            if json.count > maxLimitCountInText && resultLinelimit != nil {
-                                HStack {
-                                    Spacer()
-                                    Button("Expand Result") {
-                                        resultLinelimit = nil
-                                    }
-                                    Spacer()
-                                }
-                                .padding()
-                            }
-                        }
-                    }
-                }
-            }
+                Text("REQUEST:")
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.leading)
+                TextEditor(text: $text)
         }
         .padding(.leading)
         .navigationTitle(log.formattedShortCreatedAt)
