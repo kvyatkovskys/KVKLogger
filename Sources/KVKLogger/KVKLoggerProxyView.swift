@@ -55,7 +55,9 @@ struct KVKLoggerProxyView: View {
         if #available(iOS 16.0, macOS 13.0, *) {
             return NavigationStack {
                 bodyView
+#if os(iOS)
                     .toolbarBackground(.regularMaterial, for: .navigationBar)
+#endif
                     .navigationDestination(for: ItemLog.self) { (log) in
                         KVKLogNetworkDetailView(log: log)
                     }
