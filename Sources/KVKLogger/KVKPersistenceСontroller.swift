@@ -42,7 +42,13 @@ struct KVKPersistenceСontroller {
         backgroundContext = container.newBackgroundContext()
     }
     
+    func getNewItem() -> ItemLog? {
+        guard container.persistentStoreDescriptions.first?.url != nil else { return nil }
+        return ItemLog(context: backgroundContext)
+    }
+    
     func save() {
+        guard container.persistentStoreDescriptions.first?.url != nil else { return }
         backgroundContext.saveContext()
     }
     

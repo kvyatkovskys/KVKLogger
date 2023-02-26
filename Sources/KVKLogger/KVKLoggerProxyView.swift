@@ -252,7 +252,7 @@ struct KVKLoggerView_Previews: PreviewProvider {
         newItem3.type = ItemLogType.network
         newItem3.logType = KVKLogType.print
         newItem3.items = "Test description network Test description network Test description network"
-        result.backgroundContext.saveContext()
+        result.save()
         return Group {
             KVKLoggerProxyView()
             KVKLoggerProxyView()
