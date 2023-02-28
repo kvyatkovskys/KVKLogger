@@ -7,16 +7,14 @@
 
 import CoreData
 
-struct KVKPersistenceСontroller {
-    
-    static let shared = KVKPersistenceСontroller()
-    
+final class KVKPersistenceСontroller {
+        
     let container: NSPersistentContainer
     let backgroundContext: NSManagedObjectContext
     var viewContext: NSManagedObjectContext {
         container.viewContext
     }
-    
+        
     init(inMemory: Bool = false) {
         let dbName = dataBaseURL.lastPathComponent
         if inMemory {
@@ -34,40 +32,20 @@ struct KVKPersistenceСontroller {
         container.persistentStoreDescriptions = [store]
         container.loadPersistentStores { (desc, error) in
             if let error = error as? NSError {
-                print("Unresolved error \(error), \(error.userInfo)")
+                debugPrint("Unresolved error \(error), \(error.userInfo)")
             }
         }
+        backgroundContext = container.newBackgroundContext()
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
-        backgroundContext = container.newBackgroundContext()
     }
     
-    func getNewItem() -> ItemLog? {
-        guard container.persistentStoreDescriptions.first?.url != nil else { return nil }
-        return ItemLog(context: backgroundContext)
+    func getNewItem() -> ItemLog {
+        ItemLog(context: backgroundContext)
     }
     
     func save() {
-        guard container.persistentStoreDescriptions.first?.url != nil else { return }
         backgroundContext.saveContext()
-    }
-    
-    func deleteAll() {
-        do {
-            let fetchRequest: NSFetchRequest<NSFetchRequestResult>
-            fetchRequest = NSFetchRequest(entityName: ItemLog.entityName)
-            let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-            deleteRequest.resultType = .resultTypeObjectIDs
-            let batchDelete = try viewContext.execute(deleteRequest) as? NSBatchDeleteResult
-
-            guard let deleteResult = batchDelete?.result as? [NSManagedObjectID] else { return }
-
-            let deletedObjects: [String: Any] = [NSDeletedObjectsKey: deleteResult]
-            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: deletedObjects, into: [viewContext])
-        } catch {
-            let nsError = error as NSError
-            print("Unresolved error \(nsError), \(nsError.userInfo)")
-        }
     }
         
     private let dataBaseURL: URL = {
@@ -139,6 +117,24 @@ extension NSAttributeDescription {
 }
 
 extension NSManagedObjectContext {
+    
+    func deleteAll() {
+        do {
+            let fetchRequest: NSFetchRequest<NSFetchRequestResult>
+            fetchRequest = NSFetchRequest(entityName: ItemLog.entityName)
+            let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+            deleteRequest.resultType = .resultTypeObjectIDs
+            let batchDelete = try execute(deleteRequest) as? NSBatchDeleteResult
+
+            guard let deleteResult = batchDelete?.result as? [NSManagedObjectID] else { return }
+
+            let deletedObjects: [String: Any] = [NSDeletedObjectsKey: deleteResult]
+            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: deletedObjects, into: [self])
+        } catch {
+            let nsError = error as NSError
+            debugPrint("Unresolved error \(nsError), \(nsError.userInfo)")
+        }
+    }
     
     func saveContext() {
         guard hasChanges else { return }

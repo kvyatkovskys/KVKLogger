@@ -8,7 +8,7 @@
 import SwiftUI
 
 public struct KVKLoggerView: View {
-    private let persistenceContainer = KVKPersistenceСontroller.shared
+    private let persistenceContainer = KVKLogger.shared.store
     @Environment (\.scenePhase) private var scenePhase
     
     public init() {}
@@ -168,13 +168,13 @@ struct KVKLoggerProxyView: View {
                 case .clearAll:
                     if #available(iOS 15.0, macOS 12.0, *) {
                         Button(role: .destructive) {
-                            KVKPersistenceСontroller.shared.deleteAll()
+                            viewContext.deleteAll()
                         } label: {
                             Text(item.item.title)
                         }
                     } else {
                         Button {
-                            KVKPersistenceСontroller.shared.deleteAll()
+                            viewContext.deleteAll()
                         } label: {
                             Text(item.item.title)
                         }

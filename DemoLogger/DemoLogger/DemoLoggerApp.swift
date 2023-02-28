@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import KVKLogger
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     
@@ -28,6 +29,9 @@ struct DemoLoggerApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .task {
+                    KVKLogger.shared.configure()
+                }
         }
     }
     

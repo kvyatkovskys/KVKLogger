@@ -269,7 +269,7 @@ POST https://practiceapp-dev.symplast.com/AppActions/Stats (200)BODY: {
 [Result]: success(5941 bytes)
 """
         await withTaskGroup(of: Void.self) { group in
-            for _ in 0 ..< 1 {
+            for _ in 0..<50 {
                 group.addTask {
                     await KVKLogger.shared.network(text, type: .debug)
                 }

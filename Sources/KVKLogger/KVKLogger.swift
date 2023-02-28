@@ -10,7 +10,7 @@ import CoreData
 
 open class KVKLogger {
 
-    private let store = KVKPersistenceСontroller.shared
+    let store: KVKPersistenceСontroller
     
     public static let shared = KVKLogger()
     /// Debug Mode
@@ -21,7 +21,20 @@ open class KVKLogger {
     
     @ObservedObject var vm = KVKLoggerVM()
     
-    public init() {}
+    public init() {
+        store = KVKPersistenceСontroller()
+    }
+    
+    public func configure() {
+        let urls = store.container.persistentStoreDescriptions
+            .compactMap({ $0.url?.lastPathComponent })
+            .joined(separator: ", ")
+        if urls.isEmpty {
+            debugPrint("Problem with configuring local DB!")
+            return
+        }
+        debugPrint("Local DB: [\(urls)] is configured!")
+    }
     
     public func log(_ items: Any...,
                     status: KVKStatus = .info,
@@ -64,13 +77,13 @@ open class KVKLogger {
         let date = Date()
         if isEnableSaveIntoDB {
             let item = store.getNewItem()
-            item?.createdAt = date
-            item?.status_ = status?.rawValue
-            item?.logType = logType
-            item?.type = type
-            item?.details = details
-            item?.items = items
-            item?.data = data
+            item.createdAt = date
+            item.status_ = status?.rawValue
+            item.logType = logType
+            item.type = type
+            item.details = details
+            item.items = items
+            item.data = data
             store.save()
         }
         
