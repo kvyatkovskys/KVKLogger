@@ -11,12 +11,18 @@ final class KVKPersistenceСontroller {
         
     let container: NSPersistentContainer
     let backgroundContext: NSManagedObjectContext
+    
     var viewContext: NSManagedObjectContext {
         container.viewContext
     }
+    
+    private let updateContext: NSManagedObjectContext
+    private var cacheDBURL: URL?
         
     init(inMemory: Bool = false) {
-        let dbName = dataBaseURL.lastPathComponent
+        let url = dataBaseURL
+        cacheDBURL = url
+        let dbName = url.lastPathComponent
         if inMemory {
             container = NSPersistentContainer(name: dbName, managedObjectModel: KVKPersistenceСontroller.model)
             if #available(iOS 16.0, macOS 13.0, *) {
@@ -28,7 +34,7 @@ final class KVKPersistenceСontroller {
             container = NSPersistentContainer(name: dbName, managedObjectModel: KVKPersistenceСontroller.model)
         }
         
-        let store = NSPersistentStoreDescription(url: dataBaseURL)
+        let store = NSPersistentStoreDescription(url: url)
         container.persistentStoreDescriptions = [store]
         container.loadPersistentStores { (desc, error) in
             if let error = error as? NSError {
@@ -38,14 +44,32 @@ final class KVKPersistenceСontroller {
         backgroundContext = container.newBackgroundContext()
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+        let _updateContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        _updateContext.parent = container.viewContext
+        updateContext = _updateContext
     }
     
     func getNewItem() -> ItemLog {
-        ItemLog(context: backgroundContext)
+        ItemLog(context: viewContext)
     }
     
     func save() {
-        backgroundContext.saveContext()
+        // temporary checking a file
+        if let url = cacheDBURL, !FileManager.default.fileExists(atPath: url.path) {
+            debugPrint("Can't find DB in directory.")
+            return
+        }
+        
+        guard viewContext.hasChanges else { return }
+        
+        updateContext.performAndWait { [weak self] in
+            do {
+                try self?.updateContext.save()
+                self?.viewContext.saveContext()
+            } catch {
+                debugPrint("Could not save data. \(error), \(error.localizedDescription)")
+            }
+        }
     }
         
     private let dataBaseURL: URL = {
