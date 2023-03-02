@@ -49,8 +49,8 @@ final class KVKPersistenceСontroller {
         updateContext = _updateContext
     }
     
-    func getNewItem() -> ItemLog {
-        ItemLog(context: viewContext)
+    func getNewItem() -> ItemLog? {
+        NSEntityDescription.insertNewObject(forEntityName: ItemLog.entityName, into: updateContext) as? ItemLog
     }
     
     func save() {
@@ -60,7 +60,7 @@ final class KVKPersistenceСontroller {
             return
         }
         
-        guard viewContext.hasChanges else { return }
+        guard updateContext.hasChanges else { return }
         
         updateContext.performAndWait { [weak self] in
             do {
