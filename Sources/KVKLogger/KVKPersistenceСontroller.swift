@@ -24,14 +24,14 @@ final class KVKPersistenceСontroller {
         cacheDBURL = url
         let dbName = url.lastPathComponent
         if inMemory {
-            container = NSPersistentContainer(name: dbName, managedObjectModel: KVKPersistenceСontroller.model)
+            container = NSPersistentContainer(name: dbName, managedObjectModel: dbModel)
             if #available(iOS 16.0, macOS 13.0, *) {
                 container.persistentStoreDescriptions.first!.url = URL(filePath: "/dev/null")
             } else {
                 container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
             }
         } else {
-            container = NSPersistentContainer(name: dbName, managedObjectModel: KVKPersistenceСontroller.model)
+            container = NSPersistentContainer(name: dbName, managedObjectModel: dbModel)
         }
         
         let store = NSPersistentStoreDescription(url: url)
@@ -47,6 +47,8 @@ final class KVKPersistenceСontroller {
         let _updateContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
         _updateContext.parent = container.viewContext
         updateContext = _updateContext
+        
+        checkOldRecords()
     }
     
     func getNewItem() -> ItemLog? {
@@ -69,6 +71,21 @@ final class KVKPersistenceСontroller {
             } catch {
                 debugPrint("Could not save data. \(error), \(error.localizedDescription)")
             }
+        }
+    }
+    
+    private func checkOldRecords() {
+        // temporary checking a file
+        if let url = cacheDBURL, !FileManager.default.fileExists(atPath: url.path) {
+            debugPrint("Can't find DB in directory.")
+            return
+        }
+        
+        // check if we need to delete the old records
+        if let lastRecord = backgroundContext.fetchLastRecord(),
+           KVKSharedData.shared.needToDeleteOldRecords(from: lastRecord.createdAt) {
+            updateContext.deleteAll(onlyOldRecords: true)
+            KVKSharedData.shared.lastClearByDate = Date()
         }
     }
         
@@ -99,7 +116,7 @@ final class KVKPersistenceСontroller {
         return resultURL
     }()
         
-    private static let model: NSManagedObjectModel = {
+    private let dbModel: NSManagedObjectModel = {
         typealias Entity = NSEntityDescription
         typealias Attribute = NSAttributeDescription
         
@@ -142,10 +159,27 @@ extension NSAttributeDescription {
 
 extension NSManagedObjectContext {
     
-    func deleteAll() {
+    func fetchLastRecord() -> ItemLog? {
+        let request = NSFetchRequest<ItemLog>(entityName: ItemLog.entityName)
+        request.fetchLimit = 1
+        request.predicate = NSPredicate(format: "createdAt_ < %@", KVKSharedData.shared.lastClearByDate as NSDate)
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \ItemLog.createdAt_, ascending: false)]
+        do {
+            return try fetch(request).first
+        } catch {
+            let nsError = error as NSError
+            debugPrint("Unresolved error \(nsError), \(nsError.userInfo)")
+            return nil
+        }
+    }
+    
+    func deleteAll(onlyOldRecords: Bool = false) {
         do {
             let fetchRequest: NSFetchRequest<NSFetchRequestResult>
             fetchRequest = NSFetchRequest(entityName: ItemLog.entityName)
+            if onlyOldRecords {
+                fetchRequest.predicate = NSPredicate(format: "createdAt_ < %@", KVKSharedData.shared.lastClearByDate as NSDate)
+            }
             let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
             deleteRequest.resultType = .resultTypeObjectIDs
             let batchDelete = try execute(deleteRequest) as? NSBatchDeleteResult
@@ -168,7 +202,7 @@ extension NSManagedObjectContext {
                 try self?.save()
             } catch {
                 let nsError = error as NSError
-                print("Unresolved error \(nsError), \(nsError.userInfo)")
+                debugPrint("Unresolved error \(nsError), \(nsError.userInfo)")
             }
         }
     }

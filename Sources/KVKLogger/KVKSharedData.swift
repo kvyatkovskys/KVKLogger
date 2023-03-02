@@ -12,7 +12,7 @@ final class KVKSharedData {
     static let shared = KVKSharedData()
     
     @AppStorage("clearBy") private var clearBy_: String?
-    @AppStorage("clearByDate") private var clearByDate_: String?
+    @AppStorage("clearByDate") private var lastClearByDate_: String?
     
     var isPreviewMode: Bool {
         if let isPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"], isPreview == "1" {
@@ -30,12 +30,13 @@ final class KVKSharedData {
         }
         set {
             clearBy_ = newValue.rawValue
+            lastClearByDate = Date()
         }
     }
     
-    var clearByDate: Date {
+    var lastClearByDate: Date {
         get {
-            guard let dt = clearByDate_ else { return Date() }
+            guard let dt = lastClearByDate_ else { return Date() }
             
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy.MM.dd"
@@ -44,7 +45,33 @@ final class KVKSharedData {
         set {
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy.MM.dd"
-            clearByDate_ = formatter.string(from: newValue)
+            lastClearByDate_ = formatter.string(from: newValue)
+        }
+    }
+    
+    func needToDeleteOldRecords(from date: Date) -> Bool {
+        let fromDate = Calendar.current.startOfDay(for: date)
+        let toDate = Calendar.current.startOfDay(for: lastClearByDate)
+        let days = Calendar.current.dateComponents([.day],
+                                                   from: fromDate,
+                                                   to: toDate).day ?? 0
+        switch clearBy {
+        case .everyDay:
+            return days >= 1
+        case .everyWeek:
+            return days > 7
+        case .everyMonth:
+            return days > 30
+        case .everyYear:
+            return days > 365
+        case .none:
+            return false
+        }
+    }
+    
+    init() {
+        if clearBy_ == nil {
+            clearBy = .everyWeek
         }
     }
     

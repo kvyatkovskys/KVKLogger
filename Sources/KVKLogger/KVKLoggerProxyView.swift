@@ -22,15 +22,17 @@ public struct KVKLoggerView: View {
     }
 }
 
+//@SectionedFetchRequest(sectionIdentifier: \.status.rawValue, sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)])
+//private var sections: SectionedFetchResults<String, ItemLog>
+
 struct KVKLoggerProxyView: View {
     
     @Environment (\.managedObjectContext) private var viewContext
     @Environment (\.presentationMode) private var presentationMode
     @FetchRequest(fetchRequest: ItemLog.fecth(), animation: .default)
-    //@SectionedFetchRequest(sectionIdentifier: \.status.rawValue, sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)])
-    //private var sections: SectionedFetchResults<String, ItemLog>
+
     private var logs: FetchedResults<ItemLog>
-    private var selectedLog: ItemLog?
+    
     @ObservedObject private var vm = KVKLoggerVM()
     @State private var selectedClearBy = KVKSharedData.shared.clearBy
     
@@ -149,6 +151,9 @@ struct KVKLoggerProxyView: View {
             }
 #endif
         }
+        .onChange(of: selectedClearBy) { (newValue) in
+            KVKSharedData.shared.clearBy = newValue
+        }
     }
     
     private var settingsMenu: some View {
@@ -156,15 +161,12 @@ struct KVKLoggerProxyView: View {
             ForEach(vm.getSettingItems()) { (item) in
                 switch item.item {
                 case .clearBySchedule:
-                    Menu {
-                        Picker("", selection: $selectedClearBy) {
-                            ForEach(item.subItems ?? []) { (subItem) in
-                                Text(subItem.title)
-                            }
+                    Picker(item.item.title, selection: $selectedClearBy) {
+                        ForEach(item.subItems ?? []) { (subItem) in
+                            Text(subItem.title)
                         }
-                    } label: {
-                        Text(item.item.title)
                     }
+                    .pickerStyle(.menu)
                 case .clearAll:
                     if #available(iOS 15.0, macOS 12.0, *) {
                         Button(role: .destructive) {
@@ -188,37 +190,34 @@ struct KVKLoggerProxyView: View {
     
     @ViewBuilder
     private func getLogView(_ log: ItemLog) -> some View {
-        HStack {
-            if log.type == .common {
-                Text(log.status.icon)
-            } else {
-                Image(systemName: "network")
-                    .resizable()
-                    .foregroundColor(.blue)
-                    .frame(width: 20, height: 20)
+        VStack(alignment: .leading, spacing: 10) {
+            Text(log.items)
+                .lineLimit(log.type == .network ? 8 : nil)
+            if let details = log.details {
+                Text(details)
             }
-            VStack(alignment: .leading, spacing: 5) {
-                Text(log.items)
-                    .lineLimit(log.type == .network ? 8 : nil)
-                if let details = log.details {
-                    Text(details)
-                }
-                if log.type == .network, let size = log.size {
-                    HStack {
-                        Image(systemName: "arrow.down.circle.fill")
-                            .resizable()
-                            .foregroundColor(.green)
-                            .frame(width: 15, height: 15)
-                        Text(size)
-                    }
-                }
+            if log.type == .network, let size = log.size {
                 HStack {
-                    Text(log.formattedCreatedAt)
+                    Image(systemName: "arrow.down.circle.fill")
+                        .resizable()
+                        .foregroundColor(.green)
+                        .frame(width: 15, height: 15)
+                    Text(size)
                 }
-                .foregroundColor(.gray)
-                .font(.subheadline)
             }
-            Spacer()
+            HStack {
+                if log.type == .common {
+                    Text(log.status.icon)
+                } else {
+                    Image(systemName: "network")
+                        .resizable()
+                        .foregroundColor(.blue)
+                        .frame(width: 20, height: 20)
+                }
+                Text(log.formattedCreatedAt)
+            }
+            .foregroundColor(.gray)
+            .font(.subheadline)
         }
         .contextMenu {
             Button {
@@ -226,7 +225,11 @@ struct KVKLoggerProxyView: View {
             } label: {
                 Label("Copy", systemImage: "doc.on.doc")
             }
-
+            if #available(iOS 16.0, macOS 13.0, *) {
+                ShareLink(item: log.copyTxt)
+            } else {
+                // Fallback on earlier versions
+            }
         }
     }
 }
@@ -235,24 +238,24 @@ struct KVKLoggerView_Previews: PreviewProvider {
     static var previews: some View {
         let result = KVKPersistenceСontroller(inMemory: true)
         let viewContext = result.viewContext
-        let newItem1 = ItemLog(context: result.backgroundContext)
+        let newItem1 = ItemLog(context: viewContext)
         newItem1.createdAt = Date()
         newItem1.status = KVKStatus.info
         newItem1.logType = KVKLogType.debug
         newItem1.items = String(describing: "Test description log Test description log Test description log")
-        let newItem2 = ItemLog(context: result.backgroundContext)
+        let newItem2 = ItemLog(context: viewContext)
         newItem2.createdAt = Date()
         newItem2.status = KVKStatus.verbose
         newItem2.logType = KVKLogType.print
         newItem2.details = "\(#file)\n\(#function)\n\(#line)"
         newItem2.items = "Test description log Test description log Test description log"
-        let newItem3 = ItemLog(context: result.backgroundContext)
+        let newItem3 = ItemLog(context: viewContext)
         newItem3.createdAt = Date()
         newItem3.data = "Test response".data(using: .utf8)
         newItem3.type = ItemLogType.network
         newItem3.logType = KVKLogType.print
         newItem3.items = "Test description network Test description network Test description network"
-        result.save()
+        viewContext.saveContext()
         return Group {
             KVKLoggerProxyView()
             KVKLoggerProxyView()
