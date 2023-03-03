@@ -67,7 +67,6 @@ final class KVKPersistenceСontroller {
         updateContext.performAndWait { [weak self] in
             do {
                 try self?.updateContext.save()
-                self?.viewContext.saveContext()
             } catch {
                 debugPrint("Could not save data. \(error), \(error.localizedDescription)")
             }
