@@ -89,7 +89,7 @@ final class KVKPersistenceСontroller {
     }
         
     private let dataBaseURL: URL = {
-        let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+        let url = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
         var resultURL: URL
         if #available(iOS 16.0, macOS 13.0, *) {
             resultURL = url?
