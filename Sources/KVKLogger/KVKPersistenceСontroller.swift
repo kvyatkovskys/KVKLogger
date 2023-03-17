@@ -11,12 +11,11 @@ final class KVKPersistenceСontroller {
         
     let container: NSPersistentContainer
     let backgroundContext: NSManagedObjectContext
-    
     var viewContext: NSManagedObjectContext {
         container.viewContext
     }
     
-    private let updateContext: NSManagedObjectContext
+    //private let updateContext: NSManagedObjectContext
     private var cacheDBURL: URL?
         
     init(inMemory: Bool = false) {
@@ -44,15 +43,12 @@ final class KVKPersistenceСontroller {
         backgroundContext = container.newBackgroundContext()
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
-        let _updateContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-        _updateContext.parent = container.viewContext
-        updateContext = _updateContext
         
         checkOldRecords()
     }
     
     func getNewItem() -> ItemLog? {
-        NSEntityDescription.insertNewObject(forEntityName: ItemLog.entityName, into: updateContext) as? ItemLog
+        ItemLog(context: backgroundContext)
     }
     
     func save() {
@@ -62,11 +58,11 @@ final class KVKPersistenceСontroller {
             return
         }
         
-        guard updateContext.hasChanges else { return }
+        guard backgroundContext.hasChanges else { return }
         
-        updateContext.performAndWait { [weak self] in
+        backgroundContext.performAndWait { [weak self] in
             do {
-                try self?.updateContext.save()
+                try self?.backgroundContext.save()
             } catch {
                 debugPrint("Could not save data. \(error), \(error.localizedDescription)")
             }
@@ -83,7 +79,7 @@ final class KVKPersistenceСontroller {
         // check if we need to delete the old records
         if let lastRecord = backgroundContext.fetchLastRecord(),
            KVKSharedData.shared.needToDeleteOldRecords(from: lastRecord.createdAt) {
-            updateContext.deleteAll(onlyOldRecords: true)
+            backgroundContext.deleteAll(onlyOldRecords: true)
             KVKSharedData.shared.lastClearByDate = Date()
         }
     }
