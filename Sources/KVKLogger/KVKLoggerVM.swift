@@ -10,6 +10,7 @@ import SwiftUI
 final class KVKLoggerVM: ObservableObject {
     
     @Published var query = ""
+    @Published var selectedDate: KVKDatePopoverView.DateContainer?
     // @Published var selectedGroupBy: CurateSubItem = .none
     // @Published var selectedFilterBy: CurateSubItem = .none
     
@@ -29,6 +30,21 @@ final class KVKLoggerVM: ObservableObject {
             typePredicate
         ])
         return predicates
+    }
+    
+    func getPredicatesByDate(_ date: KVKDatePopoverView.DateContainer?) -> NSPredicate? {
+        let start = date?.start
+        let end = date?.end
+        
+        if let start, let end {
+            return NSPredicate(format: "createdAt_ >= %@ AND createdAt_ < %@", start as NSDate, end as NSDate)
+        } else if let start {
+            return NSPredicate(format: "createdAt_ >= %@", start as NSDate)
+        } else if let end {
+            return NSPredicate(format: "createdAt_ < %@", end as NSDate)
+        } else {
+            return nil
+        }
     }
     
     func getPredicateByCurate(_ curate: CurateSubItem) -> NSPredicate? {

@@ -22,9 +22,6 @@ public struct KVKLoggerView: View {
     }
 }
 
-//@SectionedFetchRequest(sectionIdentifier: \.status.rawValue, sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)])
-//private var sections: SectionedFetchResults<String, ItemLog>
-
 struct KVKLoggerProxyView: View {
     
     @Environment (\.managedObjectContext) private var viewContext
@@ -35,22 +32,22 @@ struct KVKLoggerProxyView: View {
     
     @ObservedObject private var vm = KVKLoggerVM()
     @State private var selectedClearBy = KVKSharedData.shared.clearBy
+    @State private var isDatePopoverPresented = false
     
     var body: some View {
-        if #available(iOS 15.0, macOS 12.0, *) {
-            navigationView
+        navigationView
 #if os(iOS)
-                .searchable(text: $vm.query,
-                            placement: .navigationBarDrawer(displayMode: .always))
+            .searchable(text: $vm.query,
+                        placement: .navigationBarDrawer(displayMode: .always))
 #else
-                .searchable(text: $vm.query)
+            .searchable(text: $vm.query)
 #endif
-                .onChange(of: vm.query, perform: { (newValue) in
-                    logs.nsPredicate = vm.getPredicatesByQuery(newValue)
-                })
-        } else {
-            navigationView
-        }
+            .onChange(of: vm.query, perform: { (newValue) in
+                logs.nsPredicate = vm.getPredicatesByQuery(newValue)
+            })
+            .onChange(of: vm.selectedDate) { (newValue) in
+                logs.nsPredicate = vm.getPredicatesByDate(newValue)
+            }
     }
     
     private var navigationView: some View {
@@ -78,27 +75,41 @@ struct KVKLoggerProxyView: View {
         }
     }
     
-    private var bodyView: some View {
-        List {
-            ForEach(logs) { (log) in
-                if log.type == .network {
-                    if #available(iOS 16.0, macOS 13.0, *) {
-                        NavigationLink(value: log) {
-                            getLogView(log)
+    @ViewBuilder
+    private var bodyProxyView: some View {
+        if logs.isEmpty {
+            VStack {
+                Spacer()
+                Text("No Logs")
+                    .font(.largeTitle)
+                Spacer()
+            }
+        } else {
+            List {
+                ForEach(logs) { (log) in
+                    if log.type == .network {
+                        if #available(iOS 16.0, macOS 13.0, *) {
+                            NavigationLink(value: log) {
+                                getLogView(log)
+                            }
+                            .tint(.black)
+                        } else {
+                            NavigationLink {
+                                KVKLogNetworkDetailView(log: log)
+                            } label: {
+                                getLogView(log)
+                            }
                         }
-                        .tint(.black)
                     } else {
-                        NavigationLink {
-                            KVKLogNetworkDetailView(log: log)
-                        } label: {
-                            getLogView(log)
-                        }
+                        getLogView(log)
                     }
-                } else {
-                    getLogView(log)
                 }
             }
         }
+    }
+    
+    private var bodyView: some View {
+        bodyProxyView
         .listStyle(PlainListStyle())
         .navigationTitle("Console")
 #if os(iOS)
@@ -114,40 +125,29 @@ struct KVKLoggerProxyView: View {
                 }
             }
             ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button {
+                    isDatePopoverPresented = true
+                } label: {
+                    Image(systemName: "calendar")
+                }
+                .popover(isPresented: $isDatePopoverPresented) {
+                    if UIDevice.current.userInterfaceIdiom == .phone {
+                        if #available(iOS 16.0, *) {
+                            KVKDatePopoverView(date: $vm.selectedDate)
+                                .presentationDetents([.fraction(0.3)])
+                        } else {
+                            KVKDatePopoverView(date: $vm.selectedDate)
+                        }
+                    } else {
+                        KVKDatePopoverView(date: $vm.selectedDate)
+                    }
+                }
                 if #available(iOS 16.0, macOS 13.0, *) {
                     settingsMenu
                         .menuOrder(.fixed)
                 } else {
                     settingsMenu
                 }
-                // in progress
-//                Menu {
-//                    ForEach(vm.getCurateItems()) { (item) in
-//                        switch item.item {
-//                        case .groupBy:
-//                            Picker("\(item.item.title) \(vm.selectedGroupBy.title)",
-//                                   selection: $vm.selectedGroupBy) {
-//                                ForEach(item.subItems) { (subItem) in
-//                                    Text(subItem.title)
-//                                }
-//                            }.pickerStyle(.menu)
-//                        case .filterBy:
-//                            Picker("\(item.item.title) \(vm.selectedFilterBy.title)",
-//                                   selection: $vm.selectedFilterBy) {
-//                                ForEach(item.subItems) { (subItem) in
-//                                    Text(subItem.title)
-//                                }
-//                            }.pickerStyle(.menu)
-//                        }
-//                    }
-//                    if vm.selectedFilterBy != .none || vm.selectedGroupBy != .none {
-//                        Button("Reset", role: .destructive) {
-//                            vm.selectedFilterBy = .none
-//                        }
-//                    }
-//                } label: {
-//                    Image(systemName: "line.3.horizontal.decrease.circle")
-//                }
             }
 #endif
         }
@@ -168,18 +168,10 @@ struct KVKLoggerProxyView: View {
                     }
                     .pickerStyle(.menu)
                 case .clearAll:
-                    if #available(iOS 15.0, macOS 12.0, *) {
-                        Button(role: .destructive) {
-                            viewContext.deleteAll()
-                        } label: {
-                            Text(item.item.title)
-                        }
-                    } else {
-                        Button {
-                            viewContext.deleteAll()
-                        } label: {
-                            Text(item.item.title)
-                        }
+                    Button(role: .destructive) {
+                        viewContext.deleteAll()
+                    } label: {
+                        Text(item.item.title)
                     }
                 }
             }
@@ -264,3 +256,36 @@ struct KVKLoggerView_Previews: PreviewProvider {
         .environment(\.managedObjectContext, viewContext)
     }
 }
+
+
+//@SectionedFetchRequest(sectionIdentifier: \.status.rawValue, sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)])
+//private var sections: SectionedFetchResults<String, ItemLog>
+
+// in progress
+//                Menu {
+//                    ForEach(vm.getCurateItems()) { (item) in
+//                        switch item.item {
+//                        case .groupBy:
+//                            Picker("\(item.item.title) \(vm.selectedGroupBy.title)",
+//                                   selection: $vm.selectedGroupBy) {
+//                                ForEach(item.subItems) { (subItem) in
+//                                    Text(subItem.title)
+//                                }
+//                            }.pickerStyle(.menu)
+//                        case .filterBy:
+//                            Picker("\(item.item.title) \(vm.selectedFilterBy.title)",
+//                                   selection: $vm.selectedFilterBy) {
+//                                ForEach(item.subItems) { (subItem) in
+//                                    Text(subItem.title)
+//                                }
+//                            }.pickerStyle(.menu)
+//                        }
+//                    }
+//                    if vm.selectedFilterBy != .none || vm.selectedGroupBy != .none {
+//                        Button("Reset", role: .destructive) {
+//                            vm.selectedFilterBy = .none
+//                        }
+//                    }
+//                } label: {
+//                    Image(systemName: "line.3.horizontal.decrease.circle")
+//                }
