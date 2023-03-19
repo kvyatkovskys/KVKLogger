@@ -32,8 +32,26 @@ struct KVKDatePopoverView: View {
     var body: some View {
         VStack {
             Group {
-                DatePicker("Select start:", selection: $dateProxyStart)
-                DatePicker("Select end:", selection: $dateProxyEnd)
+                HStack {
+                    DatePicker("Select start:", selection: $dateProxyStart)
+                    if date?.start != nil {
+                        Spacer()
+                        Rectangle()
+                            .fill(.purple)
+                            .cornerRadius(2)
+                            .frame(width: 5, height: 35)
+                    }
+                }
+                HStack {
+                    DatePicker("Select end:", selection: $dateProxyEnd)
+                    if date?.end != nil {
+                        Spacer()
+                        Rectangle()
+                            .fill(.purple)
+                            .cornerRadius(2)
+                            .frame(width: 5, height: 35)
+                    }
+                }
             }
             
             if showError {
@@ -61,13 +79,19 @@ struct KVKDatePopoverView: View {
                 }
                 .background(.blue)
                 .cornerRadius(10)
-                .padding()
+                .padding(5)
 
-                Button("Clear", role: .destructive) {
+                Button {
                     date = nil
                     dismiss()
+                } label: {
+                    Text("Clear")
+                        .foregroundColor(.white)
+                        .padding(10)
                 }
-                .padding()
+                .background(.red)
+                .cornerRadius(10)
+                .padding(5)
             }
             .padding(.top)
             
