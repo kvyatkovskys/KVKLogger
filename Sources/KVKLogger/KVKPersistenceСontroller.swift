@@ -58,7 +58,7 @@ final class KVKPersistenceСontroller {
             return
         }
         
-        guard backgroundContext.hasChanges else { return }
+        guard backgroundContext.hasChanges && !backgroundContext.insertedObjects.isEmpty else { return }
         
         backgroundContext.performAndWait { [weak self] in
             do {

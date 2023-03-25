@@ -18,13 +18,12 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Menu("Status of error: \(selectedStatus.rawValue)") {
-                Picker("", selection: $selectedStatus) {
-                    ForEach(statuses) { (status) in
-                        Text(status.title)
-                    }
+            Picker("Status of error: \(selectedStatus.rawValue)", selection: $selectedStatus) {
+                ForEach(statuses) { (status) in
+                    Text(status.title)
                 }
             }
+            .pickerStyle(.menu)
             Button("Print common log") {
                 KVKLogger.shared.log(statuses, "{\n    result =     (\n                {\n            assignedAtUtcDate = \"2023-01-30T18:11:22.2072087Z\";\n            assignedByUser =             {\n                displayName = \"Chad Jones\";\n                globalUserName = \"1007.sleapman\";\n                tenantId = 0;\n                userId = 38;\n                userImageThumbnailUrl = \"https://symplastdevelopment.s3.amazonaws.com/1007/UserImage/1007/Thumb_38.jpg\";\n            };\n            assignedByUserGlobalId = \"1007.38\";\n            assignedUser =             {\n                displayName = \"Chad Jones\";\n                globalUserName = \"1007.sleapman\";\n                tenantId = 0;\n                userId = 38;\n                userImageThumbnailUrl = \"https://symplastdevelopment.s3.amazonaws.com/1007/UserImage/1007/Thumb_38.jpg\";\n            };\n            assignedUserGlobalId = \"1007.38\";\n            auditLogs =             (\n            );\n            createdByGlobalId = \"1007.38\";\n            createdByUser =             {\n                displayName = \"Chad Jones\";\n",
                                      status: selectedStatus,
@@ -40,11 +39,17 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $isOpenedConsole) {
-            if #available(iOS 16.0, *) {
+            if #available(iOS 16.0, macOS 13.0, *) {
                 KVKLoggerView()
                     .presentationDetents([.large])
+#if os(macOS)
+                    .frame(width: 500, height: 500)
+#endif
             } else {
                 KVKLoggerView()
+#if os(macOS)
+                    .frame(width: 500, height: 500)
+#endif
             }
         }
         .padding()

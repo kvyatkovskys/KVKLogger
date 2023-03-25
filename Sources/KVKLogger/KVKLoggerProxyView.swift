@@ -27,12 +27,9 @@ struct KVKLoggerProxyView: View {
     @Environment (\.managedObjectContext) private var viewContext
     @Environment (\.presentationMode) private var presentationMode
     @FetchRequest(fetchRequest: ItemLog.fecth(), animation: .default)
-
-    private var logs: FetchedResults<ItemLog>
     
+    private var logs: FetchedResults<ItemLog>
     @ObservedObject private var vm = KVKLoggerVM()
-    @State private var selectedClearBy = KVKSharedData.shared.clearBy
-    @State private var isDatePopoverPresented = false
     
     var body: some View {
         navigationView
@@ -42,11 +39,17 @@ struct KVKLoggerProxyView: View {
 #else
             .searchable(text: $vm.query)
 #endif
-            .onChange(of: vm.query, perform: { (newValue) in
-                logs.nsPredicate = vm.getPredicatesByQuery(newValue)
+            .onSubmit(of: .search, {
+                logs.nsPredicate = vm.getPredicatesBy(query: vm.query)
             })
+            .onChange(of: vm.query) { (newValue) in
+                logs.nsPredicate = vm.getPredicatesBy(query: newValue)
+            }
             .onChange(of: vm.selectedDate) { (newValue) in
-                logs.nsPredicate = vm.getPredicatesByDate(newValue)
+                logs.nsPredicate = vm.getPredicatesBy(date: newValue)
+            }
+            .onChange(of: vm.selectedStatusBy) { (newValue) in
+                logs.nsPredicate = vm.getPredicatesBy(status: newValue)
             }
     }
     
@@ -108,75 +111,109 @@ struct KVKLoggerProxyView: View {
         }
     }
     
+    private var navBarPosition: ToolbarItemPlacement {
+#if os(iOS)
+        .navigationBarTrailing
+#else
+        .navigation
+#endif
+    }
+    
     private var bodyView: some View {
         bodyProxyView
-        .listStyle(PlainListStyle())
-        .navigationTitle("Console")
+            .listStyle(.plain)
+            .navigationTitle("Console")
 #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.inline)
 #endif
-        .toolbar {
+            .toolbar {
+                ToolbarItem(placement: .navigation) {
+                    Button {
+                        presentationMode.wrappedValue.dismiss()
+                    } label: {
+                        Image(systemName: "xmark.circle")
+                    }
+                }
+                ToolbarItemGroup(placement: navBarPosition) {
+                    Button {
+                        vm.isDatePopoverPresented = true
+                    } label: {
+                        Image(systemName: "calendar")
+                    }
+                    .popover(isPresented: $vm.isDatePopoverPresented) {
 #if os(iOS)
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    presentationMode.wrappedValue.dismiss()
-                } label: {
-                    Image(systemName: "xmark.circle")
-                }
-            }
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                Button {
-                    isDatePopoverPresented = true
-                } label: {
-                    Image(systemName: "calendar")
-                }
-                .popover(isPresented: $isDatePopoverPresented) {
-                    if UIDevice.current.userInterfaceIdiom == .phone {
                         if #available(iOS 16.0, *) {
                             KVKDatePopoverView(date: $vm.selectedDate)
                                 .presentationDetents([.fraction(0.3)])
                         } else {
                             KVKDatePopoverView(date: $vm.selectedDate)
                         }
-                    } else {
+#else
                         KVKDatePopoverView(date: $vm.selectedDate)
+#endif
+                    }
+                    if #available(iOS 16.0, macOS 13.0, *) {
+                        settingsMenu
+                            .menuOrder(.fixed)
+                    } else {
+                        settingsMenu
                     }
                 }
-                if #available(iOS 16.0, macOS 13.0, *) {
-                    settingsMenu
-                        .menuOrder(.fixed)
-                } else {
-                    settingsMenu
-                }
             }
-#endif
-        }
-        .onChange(of: selectedClearBy) { (newValue) in
-            KVKSharedData.shared.clearBy = newValue
-        }
     }
     
     private var settingsMenu: some View {
         Menu {
-            ForEach(vm.getSettingItems()) { (item) in
-                switch item.item {
-                case .clearBySchedule:
-                    Picker(item.item.title, selection: $selectedClearBy) {
-                        ForEach(item.subItems ?? []) { (subItem) in
-                            Text(subItem.title)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                case .clearAll:
-                    Button(role: .destructive) {
-                        viewContext.deleteAll()
-                    } label: {
-                        Text(item.item.title)
-                    }
-                }
-            }
+            filtersMenu
+            Divider()
+            clearMenu
         } label: {
             Image(systemName: "gear")
+        }
+    }
+    
+    private var filtersMenu: some View {
+        ForEach(vm.getCurateItems()) { (item) in
+            switch item.item {
+            case .resetAll:
+                Button(item.item.title, role: .destructive) {
+                    vm.selectedStatusBy = .none
+                }
+            case .filterBy:
+                ForEach(item.subItems) { (subItem) in
+                    switch subItem {
+                    case .status:
+                        Picker("\(item.item.title) \(vm.filterBy)", selection: $vm.selectedStatusBy) {
+                            ForEach(KVKStatus.allCases) { (status) in
+                                Text(status.title)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                }
+            default:
+                EmptyView()
+            }
+        }
+    }
+    
+    private var clearMenu: some View {
+        ForEach(vm.getSettingItems()) { (item) in
+            switch item.item {
+            case .clearBySchedule:
+                Picker("\(item.item.title) \(vm.clearBy)", selection: $vm.selectedClearBy) {
+                    ForEach(item.subItems ?? []) { (subItem) in
+                        Text(subItem.title)
+                    }
+                }
+                .pickerStyle(.menu)
+            case .clearAll:
+                Button(role: .destructive) {
+                    viewContext.deleteAll()
+                } label: {
+                    Text(item.item.title)
+                }
+            }
         }
     }
     
@@ -232,20 +269,21 @@ struct KVKLoggerView_Previews: PreviewProvider {
         let viewContext = result.viewContext
         let newItem1 = ItemLog(context: viewContext)
         newItem1.createdAt = Date()
-        newItem1.status = KVKStatus.info
-        newItem1.logType = KVKLogType.debug
+        newItem1.status = .info
+        newItem1.logType = .debug
         newItem1.items = String(describing: "Test description log Test description log Test description log")
         let newItem2 = ItemLog(context: viewContext)
         newItem2.createdAt = Date()
-        newItem2.status = KVKStatus.verbose
-        newItem2.logType = KVKLogType.print
+        newItem2.status = .verbose
+        newItem2.logType = .print
         newItem2.details = "\(#file)\n\(#function)\n\(#line)"
         newItem2.items = "Test description log Test description log Test description log"
         let newItem3 = ItemLog(context: viewContext)
         newItem3.createdAt = Date()
         newItem3.data = "Test response".data(using: .utf8)
-        newItem3.type = ItemLogType.network
-        newItem3.logType = KVKLogType.print
+        newItem3.status = .debug
+        newItem3.type = .network
+        newItem3.logType = .print
         newItem3.items = "Test description network Test description network Test description network"
         viewContext.saveContext()
         return Group {

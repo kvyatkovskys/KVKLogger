@@ -6,33 +6,85 @@
 //
 
 import SwiftUI
+import Combine
 
 final class KVKLoggerVM: ObservableObject {
     
+    @Published var selectedStatusBy = KVKStatus.none
+    @Published var selectedClearBy = KVKSharedData.shared.clearBy
+    @Published var isDatePopoverPresented = false
     @Published var query = ""
     @Published var selectedDate: KVKDatePopoverView.DateContainer?
     // @Published var selectedGroupBy: CurateSubItem = .none
     // @Published var selectedFilterBy: CurateSubItem = .none
     
-    func getPredicatesByQuery(_ query: String) -> NSPredicate? {
-        guard !query.isEmpty else { return nil }
+    var filterBy: String {
+        selectedStatusBy.title
+    }
+    var clearBy: String {
+        selectedClearBy.title
+    }
+    
+    private var clearByPublisher: AnyPublisher<SettingSubItem, Never> {
+        $selectedClearBy
+            .eraseToAnyPublisher()
+    }
+    private var cancellable = Set<AnyCancellable>()
+    
+    init() {
+        clearByPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { (newValue) in
+                KVKSharedData.shared.clearBy = newValue
+            }
+            .store(in: &cancellable)
+    }
+    
+    func getPredicatesBy(query: String? = nil,
+                         date: KVKDatePopoverView.DateContainer? = nil,
+                         status: KVKStatus? = nil) -> NSPredicate? {
+        let queryTmp = query ?? self.query
+        let dateTmp = date ?? self.selectedDate
+        let statusTmp = status ?? self.selectedStatusBy
         
-        let itemsPredicate = NSPredicate(format: "items_ CONTAINS[cd] %@", query)
-        let detailsPredicate = NSPredicate(format: "details_ CONTAINS[cd] %@", query)
-        let logTypePredicate = NSPredicate(format: "logType_ CONTAINS[cd] %@", query)
-        let typePredicate = NSPredicate(format: "type_ CONTAINS[cd] %@", query)
-        let statusPredicate = NSPredicate(format: "status_ CONTAINS[cd] %@", query)
-        let predicates = NSCompoundPredicate(orPredicateWithSubpredicates: [
-            itemsPredicate,
-            detailsPredicate,
-            logTypePredicate,
-            statusPredicate,
-            typePredicate
-        ])
+        var statusPredicate: NSPredicate?
+        var itemsPredicate: NSPredicate?
+        var detailsPredicate: NSPredicate?
+        var logTypePredicate: NSPredicate?
+        var typePredicate: NSPredicate?
+        
+        if !queryTmp.isEmpty && statusTmp != .none {
+            statusPredicate = NSPredicate(format: "status_ CONTAINS[cd] %@ AND status_ == %@", queryTmp, statusTmp.rawValue)
+            itemsPredicate = NSPredicate(format: "items_ CONTAINS[cd] %@ AND status_ == %@", queryTmp, statusTmp.rawValue)
+            detailsPredicate = NSPredicate(format: "details_ CONTAINS[cd] %@ AND status_ == %@", queryTmp, statusTmp.rawValue)
+            logTypePredicate = NSPredicate(format: "logType_ CONTAINS[cd] %@ AND status_ == %@", queryTmp, statusTmp.rawValue)
+            typePredicate = NSPredicate(format: "type_ CONTAINS[cd] %@ AND status_ == %@", queryTmp, statusTmp.rawValue)
+        } else if !queryTmp.isEmpty {
+            statusPredicate = NSPredicate(format: "status_ CONTAINS[cd] %@", queryTmp)
+            itemsPredicate = NSPredicate(format: "items_ CONTAINS[cd] %@", queryTmp)
+            detailsPredicate = NSPredicate(format: "details_ CONTAINS[cd] %@", queryTmp)
+            logTypePredicate = NSPredicate(format: "logType_ CONTAINS[cd] %@", queryTmp)
+            typePredicate = NSPredicate(format: "type_ CONTAINS[cd] %@", queryTmp)
+        } else if statusTmp != .none {
+            statusPredicate = NSPredicate(format: "status_ == %@", statusTmp.rawValue)
+        }
+        
+        var predicatesTemp: [NSPredicate] = [statusPredicate,
+                                             itemsPredicate,
+                                             detailsPredicate,
+                                             logTypePredicate,
+                                             typePredicate].compactMap { $0 }
+        
+        if let item = getPredicateByDate(dateTmp) {
+            predicatesTemp.append(item)
+        }
+        guard !predicatesTemp.isEmpty else { return nil }
+        
+        let predicates = NSCompoundPredicate(orPredicateWithSubpredicates: predicatesTemp)
         return predicates
     }
     
-    func getPredicatesByDate(_ date: KVKDatePopoverView.DateContainer?) -> NSPredicate? {
+    private func getPredicateByDate(_ date: KVKDatePopoverView.DateContainer?) -> NSPredicate? {
         let start = date?.start
         let end = date?.end
         
@@ -47,17 +99,13 @@ final class KVKLoggerVM: ObservableObject {
         }
     }
     
-    func getPredicateByCurate(_ curate: CurateSubItem) -> NSPredicate? {
-//        switch curate {
-//        case .status:
-//            return NSPredicate(format: "", curate.)
-//        case .date:
-//            <#code#>
-//        case .type:
-//            <#code#>
-//        default:
+    private func getPredicateByStatus(_ status: KVKStatus) -> NSPredicate? {
+        switch status {
+        case .none:
             return nil
-      //  }
+        default:
+            return NSPredicate(format: "status_ == %@", status.rawValue)
+        }
     }
     
     func copyLog(_ log: ItemLog) {
@@ -70,7 +118,8 @@ final class KVKLoggerVM: ObservableObject {
     
     func getCurateItems() -> [CurateContainer] {
         [CurateContainer(item: .filterBy,
-                         subItems: [.status, .type, .date])]
+                         subItems: [.status]),
+         CurateContainer(item: .resetAll)]
     }
     
     func getSettingItems() -> [SettingContainer] {

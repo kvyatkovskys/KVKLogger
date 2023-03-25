@@ -8,6 +8,7 @@
 import SwiftUI
 import KVKLogger
 
+#if os(iOS)
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
@@ -20,11 +21,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 }
+#endif
 
 @main
 struct DemoLoggerApp: App {
-        
+    
+#if os(iOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+#endif
     
     var body: some Scene {
         WindowGroup {
@@ -32,6 +36,11 @@ struct DemoLoggerApp: App {
                 .task {
                     KVKLogger.shared.configure()
                 }
+#if os(macOS)
+                .presentedWindowStyle(.hiddenTitleBar)
+                .presentedWindowToolbarStyle(.unifiedCompact)
+                .frame(width: 500, height: 600)
+#endif
         }
     }
     

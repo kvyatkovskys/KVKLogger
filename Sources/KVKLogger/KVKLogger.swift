@@ -65,7 +65,7 @@ open class KVKLogger {
         let itemsTxt = items.reduce("") { (acc, item) in
             acc + "\(item) "
         }
-        handleLog(itemsTxt, data: data, type: .network, logType: type, details: details)
+        handleLog(itemsTxt, data: data, type: .network, status: .debug, logType: type, details: details)
     }
     
     private func handleLog(_ items: String,
@@ -78,7 +78,7 @@ open class KVKLogger {
         if isEnableSaveIntoDB {
             let item = store.getNewItem()
             item?.createdAt = date
-            item?.status_ = status?.rawValue
+            item?.status = status ?? .info
             item?.logType = logType
             item?.type = type
             item?.details = details

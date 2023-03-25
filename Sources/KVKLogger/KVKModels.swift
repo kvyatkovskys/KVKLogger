@@ -12,12 +12,15 @@ import CoreData
 import UIKit
 #endif
 
-public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
-    case info, error, debug, warning, verbose
+public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
+    public static var allCases: [KVKStatus] {
+        [.info, .error, .debug, .verbose, .warning]
+    }
+    
+    case info, error, debug, warning, verbose, none
     /// custom error entity
     /// parameters:
     /// - name: name of error
-    /// - color: color of error
     case custom(_ name: String)
     
     public typealias RawValue = String
@@ -34,6 +37,8 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
             self = .warning
         case "verbose":
             self = .verbose
+        case "none":
+            self = .none
         default:
             self = .custom(rawValue)
         }
@@ -51,6 +56,8 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
             return "warning"
         case .verbose:
             return "verbose"
+        case .none:
+            return "none"
         case .custom(let txt):
             return txt.lowercased()
         }
@@ -74,6 +81,8 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
             return "Warning"
         case .verbose:
             return "Verbose"
+        case .none:
+            return ""
         }
     }
     
@@ -92,6 +101,8 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
             return .systemYellow
         case .verbose:
             return .systemTeal
+        case .none:
+            return .clear
         }
     }
 #endif
@@ -110,6 +121,8 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable {
             return "⚠️"
         case .verbose:
             return "🔍"
+        case .none:
+            return ""
         }
     }
     
@@ -136,7 +149,7 @@ enum SettingItem: Int, Identifiable {
         case .clearAll:
             return "Clear All"
         case .clearBySchedule:
-            return "Clear by schedule"
+            return "Clear by: "
         }
     }
     
@@ -187,7 +200,7 @@ enum ItemLogType: String {
 }
 
 enum CurateItem: Int, Identifiable {
-    case groupBy, filterBy
+    case groupBy, filterBy, clearBy, resetAll
     
     var id: Int {
         rawValue
@@ -199,12 +212,16 @@ enum CurateItem: Int, Identifiable {
             return "Filter by:"
         case .groupBy:
             return "Group by:"
+        case .clearBy:
+            return "Clear by:"
+        case .resetAll:
+            return "Reset Filter"
         }
     }
 }
 
 enum CurateSubItem: String, Identifiable, CaseIterable {
-    case status, date, type, reset
+    case status
     
     var id: CurateSubItem {
         self
@@ -214,19 +231,13 @@ enum CurateSubItem: String, Identifiable, CaseIterable {
         switch self {
         case .status:
             return "Status"
-        case .date:
-            return "Date"
-        case .type:
-            return "Type"
-        case .reset:
-            return "Reset"
         }
     }
 }
 
 struct CurateContainer: Identifiable {
     let item: CurateItem
-    let subItems: [CurateSubItem]
+    var subItems: [CurateSubItem] = []
     
     var id: Int {
         item.id
