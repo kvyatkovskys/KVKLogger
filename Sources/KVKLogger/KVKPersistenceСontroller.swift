@@ -34,6 +34,8 @@ final class KVKPersistenceСontroller {
         }
         
         let store = NSPersistentStoreDescription(url: url)
+        store.shouldMigrateStoreAutomatically = true
+        store.shouldInferMappingModelAutomatically = true
         container.persistentStoreDescriptions = [store]
         container.loadPersistentStores { (desc, error) in
             if let error = error as? NSError {
