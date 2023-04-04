@@ -9,16 +9,12 @@ import SwiftUI
 
 public struct KVKLoggerView: View {
     private let persistenceContainer = KVKLogger.shared.store
-    @Environment (\.scenePhase) private var scenePhase
     
     public init() {}
     
     public var body: some View {
         KVKLoggerProxyView()
             .environment(\.managedObjectContext, persistenceContainer.viewContext)
-            .onChange(of: scenePhase) { (_) in
-                persistenceContainer.save()
-            }
     }
 }
 

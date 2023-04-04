@@ -76,15 +76,14 @@ open class KVKLogger {
                            details: String?) {
         let date = Date()
         if isEnableSaveIntoDB {
-            let item = store.getNewItem()
-            item?.createdAt = date
-            item?.status = status ?? .info
-            item?.logType = logType
-            item?.type = type
-            item?.details = details
-            item?.items = items
-            item?.data = data
-            store.save()
+            let item = ItemLogProxy(createdAt: date,
+                                    data: data,
+                                    details: details,
+                                    items: items,
+                                    logType: logType,
+                                    status: status ?? .info,
+                                    type: type)
+            store.save(log: item)
         }
         
         if isDebugMode != false {

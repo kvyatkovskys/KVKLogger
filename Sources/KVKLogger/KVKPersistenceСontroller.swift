@@ -49,22 +49,25 @@ final class KVKPersistenceСontroller {
         checkOldRecords()
     }
     
-    func getNewItem() -> ItemLog? {
-        ItemLog(context: backgroundContext)
-    }
-    
-    func save() {
+    func save(log: ItemLogProxy) {
         // temporary checking a file
         if let url = cacheDBURL, !FileManager.default.fileExists(atPath: url.path) {
             debugPrint("Can't find DB in directory.")
             return
         }
-        
-        guard backgroundContext.hasChanges && !backgroundContext.insertedObjects.isEmpty else { return }
-        
+                
         backgroundContext.performAndWait { [weak self] in
+            guard let self else { return }
             do {
-                try self?.backgroundContext.save()
+                let itemLog = ItemLog(context: self.backgroundContext)
+                itemLog.createdAt_ = log.createdAt
+                itemLog.data_ = log.data
+                itemLog.details_ = log.details
+                itemLog.items_ = log.items
+                itemLog.status_ = log.status?.rawValue
+                itemLog.logType_ = log.logType?.rawValue
+                itemLog.type_ = log.type?.rawValue
+                try self.backgroundContext.save()
             } catch {
                 debugPrint("Could not save data. \(error), \(error.localizedDescription)")
             }

@@ -244,6 +244,16 @@ struct CurateContainer: Identifiable {
     }
 }
 
+struct ItemLogProxy {
+    var createdAt: Date?
+    var data: Data?
+    var details: String?
+    var items: String?
+    var logType: KVKLogType?
+    var status: KVKStatus?
+    var type: ItemLogType?
+}
+
 final class ItemLog: NSManagedObject {
     
     @NSManaged var createdAt_: Date?
