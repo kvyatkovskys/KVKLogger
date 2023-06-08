@@ -12,6 +12,8 @@ open class KVKLogger {
 
     let store: KVKPersistenceСontroller
     
+    private var availabeSaveNetworkLogs = true
+    
     public static let shared = KVKLogger()
     /// Debug Mode
     /// if #DEBUG isn't setup in a project
@@ -25,7 +27,9 @@ open class KVKLogger {
         store = KVKPersistenceСontroller()
     }
     
-    public func configure() {
+    public func configure(availabeSaveNetworkLogs: Bool = true) {
+        self.availabeSaveNetworkLogs = availabeSaveNetworkLogs
+        
         let urls = store.container.persistentStoreDescriptions
             .compactMap({ $0.url?.lastPathComponent })
             .joined(separator: ", ")
@@ -75,15 +79,21 @@ open class KVKLogger {
                            logType: KVKLogType,
                            details: String?) {
         let date = Date()
-        if isEnableSaveIntoDB {
-            let item = ItemLogProxy(createdAt: date,
-                                    data: data,
-                                    details: details,
-                                    items: items,
-                                    logType: logType,
-                                    status: status ?? .info,
-                                    type: type)
+        let item = ItemLogProxy(createdAt: date,
+                                data: data,
+                                details: details,
+                                items: items,
+                                logType: logType,
+                                status: status ?? .info,
+                                type: type)
+        
+        switch type {
+        case .common where isEnableSaveIntoDB:
             store.save(log: item)
+        case .network where isEnableSaveIntoDB && availabeSaveNetworkLogs:
+            store.save(log: item)
+        default:
+            break
         }
         
         if isDebugMode != false {
