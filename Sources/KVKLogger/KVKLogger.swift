@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import OSLog
 
 open class KVKLogger {
 
@@ -42,7 +43,7 @@ open class KVKLogger {
     
     public func log(_ items: Any...,
                     status: KVKStatus = .info,
-                    type: KVKLogType = .print,
+                    type: KVKLogType = .os,
                     filename: String = #file,
                     line: Int = #line,
                     funcName: String = #function) {
@@ -58,7 +59,7 @@ open class KVKLogger {
     
     public func network(_ items: Any...,
                         data: Data? = nil,
-                        type: KVKLogType = .print,
+                        type: KVKLogType = .os,
                         filename: String? = nil,
                         line: Int? = nil,
                         funcName: String? = nil) {
@@ -75,7 +76,7 @@ open class KVKLogger {
     private func handleLog(_ items: String,
                            data: Data? = nil,
                            type: ItemLogType,
-                           status: KVKStatus? = nil,
+                           status: KVKStatus = .info,
                            logType: KVKLogType,
                            details: String?) {
         let date = Date()
@@ -84,7 +85,7 @@ open class KVKLogger {
                                 details: details,
                                 items: items,
                                 logType: logType,
-                                status: status ?? .info,
+                                status: status,
                                 type: type)
         
         switch type {
@@ -97,10 +98,10 @@ open class KVKLogger {
         }
         
         if isDebugMode != false {
-            printLog(items, details: details, status: status, type: logType, date: date)
+            printLog(items, details: details, itemType: type, status: status, type: logType, date: date)
         } else {
 #if DEBUG
-        printLog(items, details: details, status: status, type: logType, date: date)
+            printLog(items, details: details, itemType: type, status: status, type: logType, date: date)
 #endif
         }
     }
@@ -112,20 +113,20 @@ open class KVKLogger {
     
     private func printLog(_ items: Any,
                           details: String? = nil,
-                          status: KVKStatus?,
+                          itemType: ItemLogType,
+                          status: KVKStatus,
                           type: KVKLogType,
                           date: Date) {
         let iso8601Date = date.formatted(.iso8601)
-        let icon: String
-        if let status {
-            icon = "\(status.icon) "
-        } else {
-            icon = ""
-        }
+        let icon = "\(status.icon) "
         
         switch type {
         case .os:
-            break
+            if let details {
+                status.saveOSLog("\(icon)\(iso8601Date) \(String(describing: items)) \(details)", type: itemType)
+            } else {
+                status.saveOSLog("\(icon)\(iso8601Date) \(String(describing: items))", type: itemType)
+            }
         case .debug:
             if let details {
                 debugPrint("\(icon)\(iso8601Date)", items, details)

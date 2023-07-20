@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import OSLog
 
 #if os(iOS)
 import UIKit
@@ -14,10 +15,10 @@ import UIKit
 
 public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
     public static var allCases: [KVKStatus] {
-        [.info, .error, .debug, .verbose, .warning]
+        [.notice, .info, .error, .debug, .verbose, .warning, .fault, .critical]
     }
     
-    case info, error, debug, warning, verbose, none
+    case info, error, debug, warning, verbose, fault, critical, notice, none
     /// custom error entity
     /// parameters:
     /// - name: name of error
@@ -39,6 +40,12 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
             self = .verbose
         case "none":
             self = .none
+        case "notice":
+            self = .notice
+        case "fault":
+            self = .fault
+        case "critical":
+            self = .critical
         default:
             self = .custom(rawValue)
         }
@@ -60,6 +67,12 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
             return "none"
         case .custom(let txt):
             return txt.lowercased()
+        case .fault:
+            return "fault"
+        case .critical:
+            return "critical"
+        case .notice:
+            return "notice"
         }
     }
     
@@ -82,7 +95,13 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
         case .verbose:
             return "Verbose"
         case .none:
-            return ""
+            return "None"
+        case .fault:
+            return "Fault"
+        case .critical:
+            return "Critical"
+        case .notice:
+            return "Notice"
         }
     }
     
@@ -91,9 +110,9 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
         switch self {
         case .custom:
             return .systemOrange
-        case .info:
+        case .info, .notice:
             return .systemBlue
-        case .error:
+        case .error, .fault, .critical:
             return .systemRed
         case .debug:
             return .systemPurple
@@ -116,13 +135,48 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
         case .error:
             return "❌"
         case .debug:
-            return "🔵"
+            return "☕️"
         case .warning:
             return "⚠️"
         case .verbose:
             return "🔍"
         case .none:
             return ""
+        case .fault, .critical:
+            return "‼️"
+        case .notice:
+            return "🔔"
+        }
+    }
+    
+    func saveOSLog(_ items: String, type: ItemLogType) {
+        let logger: Logger
+        switch type {
+        case .network:
+            logger = Logger.networks
+        case .common:
+            logger = Logger.logs
+        }
+        
+        switch self {
+        case .info, .custom:
+            logger.info("\(items)")
+        case .error:
+            logger.error("\(items)")
+        case .debug:
+            logger.debug("\(items)")
+        case .warning:
+            logger.warning("\(items)")
+        case .verbose:
+            logger.trace("\(items)")
+        case .fault:
+            logger.fault("\(items)")
+        case .critical:
+            logger.critical("\(items)")
+        case .notice:
+            logger.notice("\(items)")
+        case .none:
+            break
         }
     }
     
@@ -368,7 +422,7 @@ extension ItemLog {
     }
     
     var copyTxt: String {
-        return items + "\n" + (details ?? "")
+        items + "\n" + (details ?? "")
     }
     
 }

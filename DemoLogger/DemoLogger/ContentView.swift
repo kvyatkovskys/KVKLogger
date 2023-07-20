@@ -27,7 +27,7 @@ struct ContentView: View {
             Button("Print common log") {
                 KVKLogger.shared.log(statuses, "{\n    result =     (\n                {\n            assignedAtUtcDate = \"2023-01-30T18:11:22.2072087Z\";\n            assignedByUser =             {\n                displayName = \"Chad Jones\";\n                globalUserName = \"1007.sleapman\";\n                tenantId = 0;\n                userId = 38;\n                userImageThumbnailUrl = \"https://symplastdevelopment.s3.amazonaws.com/1007/UserImage/1007/Thumb_38.jpg\";\n            };\n            assignedByUserGlobalId = \"1007.38\";\n            assignedUser =             {\n                displayName = \"Chad Jones\";\n                globalUserName = \"1007.sleapman\";\n                tenantId = 0;\n                userId = 38;\n                userImageThumbnailUrl = \"https://symplastdevelopment.s3.amazonaws.com/1007/UserImage/1007/Thumb_38.jpg\";\n            };\n            assignedUserGlobalId = \"1007.38\";\n            auditLogs =             (\n            );\n            createdByGlobalId = \"1007.38\";\n            createdByUser =             {\n                displayName = \"Chad Jones\";\n",
                                      status: selectedStatus,
-                                     type: .print)
+                                     type: .os)
             }
             Button("Print network request") {
                 Task {
@@ -276,7 +276,7 @@ POST https://practiceapp-dev.symplast.com/AppActions/Stats (200)BODY: {
         await withTaskGroup(of: Void.self) { group in
             for _ in 0..<50 {
                 group.addTask {
-                    await KVKLogger.shared.network(text, type: .debug)
+                    await KVKLogger.shared.network(text, type: .os)
                 }
             }
         }
