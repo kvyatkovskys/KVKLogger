@@ -160,21 +160,21 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
         
         switch self {
         case .info, .custom:
-            logger.info("\(items)")
+            logger.info("\(items, privacy: .public)")
         case .error:
-            logger.error("\(items)")
+            logger.error("\(items, privacy: .public)")
         case .debug:
-            logger.debug("\(items)")
+            logger.debug("\(items, privacy: .public)")
         case .warning:
-            logger.warning("\(items)")
+            logger.warning("\(items, privacy: .public)")
         case .verbose:
-            logger.trace("\(items)")
+            logger.trace("\(items, privacy: .public)")
         case .fault:
-            logger.fault("\(items)")
+            logger.fault("\(items, privacy: .public)")
         case .critical:
-            logger.critical("\(items)")
+            logger.critical("\(items, privacy: .public)")
         case .notice:
-            logger.notice("\(items)")
+            logger.notice("\(items, privacy: .public)")
         case .none:
             break
         }
