@@ -69,7 +69,7 @@ struct KVKLoggerProxyView: View {
             return NavigationView {
                 bodyView
             }
-            .navigationViewStyle(StackNavigationViewStyle())
+            .navigationViewStyle(.stack)
 #endif
         }
     }
@@ -84,26 +84,25 @@ struct KVKLoggerProxyView: View {
                 Spacer()
             }
         } else {
-            List {
-                ForEach(logs) { (log) in
-                    if log.type == .network {
-                        if #available(iOS 16.0, macOS 13.0, *) {
-                            NavigationLink(value: log) {
-                                getLogView(log)
-                            }
-                            .tint(.black)
-                        } else {
-                            NavigationLink {
-                                KVKLogNetworkDetailView(log: log)
-                            } label: {
-                                getLogView(log)
-                            }
+            List(logs) { (log) in
+                if log.type == .network {
+                    if #available(iOS 16.0, macOS 13.0, *) {
+                        NavigationLink(value: log) {
+                            getLogView(log)
                         }
+                        .tint(.black)
                     } else {
-                        getLogView(log)
+                        NavigationLink {
+                            KVKLogNetworkDetailView(log: log)
+                        } label: {
+                            getLogView(log)
+                        }
                     }
+                } else {
+                    getLogView(log)
                 }
             }
+            .listStyle(.plain)
         }
     }
     
@@ -117,7 +116,6 @@ struct KVKLoggerProxyView: View {
     
     private var bodyView: some View {
         bodyProxyView
-            .listStyle(.plain)
             .navigationTitle("Console")
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -141,6 +139,7 @@ struct KVKLoggerProxyView: View {
                         if #available(iOS 16.0, *) {
                             KVKDatePopoverView(date: $vm.selectedDate)
                                 .presentationDetents([.fraction(0.3)])
+                                .presentationDragIndicator(.visible)
                         } else {
                             KVKDatePopoverView(date: $vm.selectedDate)
                         }

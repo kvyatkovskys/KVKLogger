@@ -62,7 +62,7 @@ struct KVKDatePopoverView: View {
                     Spacer()
                 }
             }
-            
+            Divider()
             HStack {
                 Button {
                     guard dateProxyStart < dateProxyEnd else {
@@ -74,28 +74,24 @@ struct KVKDatePopoverView: View {
                     dismiss()
                 } label: {
                     Text("Apply")
+                        .frame(maxWidth: .infinity)
                         .foregroundColor(.white)
                         .padding(10)
                 }
                 .background(.blue)
                 .cornerRadius(10)
-                .padding(5)
-
                 Button {
                     date = nil
                     dismiss()
                 } label: {
                     Text("Clear")
+                        .frame(maxWidth: .infinity)
                         .foregroundColor(.white)
                         .padding(10)
                 }
                 .background(.red)
                 .cornerRadius(10)
-                .padding(5)
             }
-            .padding(.top)
-            
-            Spacer()
         }
         .padding()
     }
