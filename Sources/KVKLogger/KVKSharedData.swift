@@ -10,7 +10,7 @@ import SwiftUI
 final class KVKSharedData {
         
     static let shared = KVKSharedData()
-    
+        
     @AppStorage("clearBy") private var clearBy_: String?
     @AppStorage("clearByDate") private var lastClearByDate_: String?
     
@@ -25,7 +25,6 @@ final class KVKSharedData {
     var clearBy: SettingSubItem {
         get {
             guard let item = clearBy_ else { return .everyWeek }
-            
             return SettingSubItem(rawValue: item) ?? .everyWeek
         }
         set {
@@ -56,20 +55,14 @@ final class KVKSharedData {
                                                    from: fromDate,
                                                    to: toDate).day ?? 0
         switch clearBy {
-        case .everyDay:
-            return days >= 1
-        case .everyWeek:
-            return days > 7
-        case .everyMonth:
-            return days > 30
-        case .everyYear:
-            return days > 365
+        case .everyDay, .everyWeek, .everyMonth, .everyYear:
+            return days >= clearBy.daysInLive
         case .none:
             return false
         }
     }
     
-    init() {
+    private init() {
         if clearBy_ == nil {
             clearBy = .everyWeek
         }
