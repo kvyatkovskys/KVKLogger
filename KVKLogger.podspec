@@ -4,6 +4,7 @@ Pod::Spec.new do |spec|
   spec.summary      = "Save logs to local DB on applications"
 
   spec.description  = <<-DESC
+  Save and manage logs in your applications without Xcode.
                    DESC
 
   spec.homepage     = "https://github.com/kvyatkovskys/KVKLogger"
