@@ -8,14 +8,6 @@
 import Foundation
 import OSLog
 
-public extension Date {
-    
-    var kvkConsoleFormattedDate: String {
-        ""
-    }
-    
-}
-
 extension Logger {
     private static var subsystem = Bundle.main.bundleIdentifier ?? "kvk.logger.com"
 

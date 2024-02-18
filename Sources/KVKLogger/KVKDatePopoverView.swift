@@ -8,15 +8,14 @@
 import SwiftUI
 
 struct KVKDatePopoverView: View {
-    
-    @Environment (\.dismiss) private var dismiss
+    @Environment(\.dismiss) private var dismiss
     
     struct DateContainer: Equatable {
         var start: Date
         var end: Date
     }
     
-    @Binding var date: DateContainer?
+    @Binding private var date: DateContainer?
     @State private var dateProxyStart: Date
     @State private var dateProxyEnd: Date
     @State private var showError: Bool = false
@@ -74,8 +73,8 @@ struct KVKDatePopoverView: View {
                     dismiss()
                 } label: {
                     Text("Apply")
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .foregroundColor(.white)
                         .padding(10)
                 }
                 .background(.blue)
@@ -85,8 +84,8 @@ struct KVKDatePopoverView: View {
                     dismiss()
                 } label: {
                     Text("Clear")
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .foregroundColor(.white)
                         .padding(10)
                 }
                 .background(.red)

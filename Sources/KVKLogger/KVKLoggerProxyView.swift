@@ -20,8 +20,8 @@ public struct KVKLoggerView: View {
 
 struct KVKLoggerProxyView: View {
     
-    @Environment (\.managedObjectContext) private var viewContext
-    @Environment (\.presentationMode) private var presentationMode
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.presentationMode) private var presentationMode
     @FetchRequest(fetchRequest: ItemLog.fecth(), animation: .default)
     
     private var logs: FetchedResults<ItemLog>
@@ -281,44 +281,7 @@ struct KVKLoggerView_Previews: PreviewProvider {
         newItem3.logType = .print
         newItem3.items = "Test description network Test description network Test description network"
         viewContext.saveContext()
-        return Group {
-            KVKLoggerProxyView()
-            KVKLoggerProxyView()
-                .preferredColorScheme(.dark)
-        }
-        .environment(\.managedObjectContext, viewContext)
+        return KVKLoggerProxyView()
+            .environment(\.managedObjectContext, viewContext)
     }
 }
-
-
-//@SectionedFetchRequest(sectionIdentifier: \.status.rawValue, sortDescriptors: [SortDescriptor(\.createdAt, order: .reverse)])
-//private var sections: SectionedFetchResults<String, ItemLog>
-
-// in progress
-//                Menu {
-//                    ForEach(vm.getCurateItems()) { (item) in
-//                        switch item.item {
-//                        case .groupBy:
-//                            Picker("\(item.item.title) \(vm.selectedGroupBy.title)",
-//                                   selection: $vm.selectedGroupBy) {
-//                                ForEach(item.subItems) { (subItem) in
-//                                    Text(subItem.title)
-//                                }
-//                            }.pickerStyle(.menu)
-//                        case .filterBy:
-//                            Picker("\(item.item.title) \(vm.selectedFilterBy.title)",
-//                                   selection: $vm.selectedFilterBy) {
-//                                ForEach(item.subItems) { (subItem) in
-//                                    Text(subItem.title)
-//                                }
-//                            }.pickerStyle(.menu)
-//                        }
-//                    }
-//                    if vm.selectedFilterBy != .none || vm.selectedGroupBy != .none {
-//                        Button("Reset", role: .destructive) {
-//                            vm.selectedFilterBy = .none
-//                        }
-//                    }
-//                } label: {
-//                    Image(systemName: "line.3.horizontal.decrease.circle")
-//                }

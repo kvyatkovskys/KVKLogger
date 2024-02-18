@@ -39,20 +39,20 @@ final class KVKPersistenceСontroller {
         container.persistentStoreDescriptions = [store]
         container.loadPersistentStores { (desc, error) in
             if let error = error as? NSError {
-                debugPrint("Unresolved error \(error), \(error.userInfo)")
+                debugPrint("KVKLogger: Unresolved error \(error), \(error.userInfo)")
             }
         }
         backgroundContext = container.newBackgroundContext()
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
         
-        checkOldRecords()
+        checkOldRecordsAndDeleteIfNeeded()
     }
     
     func save(log: ItemLogProxy) {
         // temporary checking a file
         if let url = cacheDBURL, !FileManager.default.fileExists(atPath: url.path) {
-            debugPrint("Can't find DB in directory.")
+            debugPrint("KVKLogger: Can't find DB in directory.")
             return
         }
                 
@@ -69,15 +69,15 @@ final class KVKPersistenceСontroller {
                 itemLog.type_ = log.type?.rawValue
                 try self.backgroundContext.save()
             } catch {
-                debugPrint("Could not save data. \(error), \(error.localizedDescription)")
+                debugPrint("KVKLogger: Could not save data. \(error), \(error.localizedDescription)")
             }
         }
     }
     
-    private func checkOldRecords() {
-        // temporary checking a file
+    private func checkOldRecordsAndDeleteIfNeeded() {
+        debugPrint("KVKLogger: Checking the old records; Last clear date - \(KVKSharedData.shared.lastClearByDate); Auto deleting \(KVKSharedData.shared.clearBy.rawValue).")
         if let url = cacheDBURL, !FileManager.default.fileExists(atPath: url.path) {
-            debugPrint("Can't find DB in directory.")
+            debugPrint("KVKLogger: Can't find DB in directory.")
             return
         }
         
@@ -86,6 +86,9 @@ final class KVKPersistenceСontroller {
            KVKSharedData.shared.needToDeleteOldRecords(from: lastRecord.createdAt) {
             backgroundContext.deleteAll(onlyOldRecords: true)
             KVKSharedData.shared.lastClearByDate = Date()
+            debugPrint("KVKLogger: The old records was successefully deleted.")
+        } else {
+            debugPrint("KVKLogger: No need to delete the old records.")
         }
     }
         
@@ -162,13 +165,12 @@ extension NSManagedObjectContext {
     func fetchLastRecord() -> ItemLog? {
         let request = NSFetchRequest<ItemLog>(entityName: ItemLog.entityName)
         request.fetchLimit = 1
-        request.predicate = NSPredicate(format: "createdAt_ < %@", KVKSharedData.shared.lastClearByDate as NSDate)
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \ItemLog.createdAt_, ascending: false)]
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \ItemLog.createdAt_, ascending: true)]
         do {
             return try fetch(request).first
         } catch {
             let nsError = error as NSError
-            debugPrint("Unresolved error \(nsError), \(nsError.userInfo)")
+            debugPrint("KVKLogger: Unresolved error \(nsError), \(nsError.userInfo)")
             return nil
         }
     }
@@ -190,19 +192,18 @@ extension NSManagedObjectContext {
             NSManagedObjectContext.mergeChanges(fromRemoteContextSave: deletedObjects, into: [self])
         } catch {
             let nsError = error as NSError
-            debugPrint("Unresolved error \(nsError), \(nsError.userInfo)")
+            debugPrint("KVKLogger: Unresolved error \(nsError), \(nsError.userInfo)")
         }
     }
     
     func saveContext() {
         guard hasChanges else { return }
-        
         performAndWait { [weak self] in
             do {
                 try self?.save()
             } catch {
                 let nsError = error as NSError
-                debugPrint("Unresolved error \(nsError), \(nsError.userInfo)")
+                debugPrint("KVKLogger: Unresolved error \(nsError), \(nsError.userInfo)")
             }
         }
     }

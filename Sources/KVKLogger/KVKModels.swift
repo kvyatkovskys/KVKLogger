@@ -224,6 +224,21 @@ enum SettingSubItem: String, Identifiable, CaseIterable {
         self
     }
     
+    var daysInLive: Int {
+        switch self {
+        case .everyDay:
+            1
+        case .everyWeek:
+            7
+        case .everyMonth:
+            30
+        case .everyYear:
+            365
+        case .none:
+            -1
+        }
+    }
+    
     var title: String {
         switch self {
         case .everyDay:
