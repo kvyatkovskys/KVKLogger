@@ -9,7 +9,7 @@ import SwiftUI
 import CoreData
 import OSLog
 
-open class KVKLogger {
+open class KVKLogger: Sendable {
 
     let store: KVKPersistenceСontroller
     
