@@ -353,6 +353,13 @@ extension ItemLog {
         return request
     }
     
+    static var request: NSFetchRequest<ItemLog> {
+        let request = NSFetchRequest<ItemLog>(entityName: ItemLog.entityName)
+        request.predicate = NSPredicate(value: true)
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \ItemLog.createdAt_, ascending: false)]
+        return request
+    }
+    
     static func delete(at offsets: IndexSet, for items: [ItemLog]) {
         if let first = items.first, let context = first.managedObjectContext {
             offsets.map { items[$0] }.forEach(context.delete)

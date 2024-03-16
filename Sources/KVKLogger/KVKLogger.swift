@@ -9,28 +9,22 @@ import SwiftUI
 import CoreData
 import OSLog
 
-open class KVKLogger: Sendable {
+open class KVKLogger: @unchecked Sendable {
 
     let store: KVKPersistenceСontroller
-    
-    private var availabeSaveNetworkLogs = true
-    
+        
     public static let shared = KVKLogger()
     /// Debug Mode
     /// if #DEBUG isn't setup in a project
     public var isDebugMode: Bool?
     
     public var isEnableSaveIntoDB: Bool = true
-    
-    @ObservedObject var vm = KVKLoggerVM()
-    
-    public init() {
+        
+    private init() {
         store = KVKPersistenceСontroller()
     }
     
-    public func configure(availabeSaveNetworkLogs: Bool = true) {
-        self.availabeSaveNetworkLogs = availabeSaveNetworkLogs
-        
+    public func configure() {
         let urls = store.container.persistentStoreDescriptions
             .compactMap({ $0.url?.lastPathComponent })
             .joined(separator: ", ")
@@ -38,12 +32,13 @@ open class KVKLogger: Sendable {
             debugPrint("Problem with configuring local DB!")
             return
         }
-        debugPrint("Local DB: [\(urls)] is configured!")
+        debugPrint("KVKLogger DB: [\(urls)] is configured!")
     }
     
     public func log(_ items: Any...,
                     status: KVKStatus = .info,
                     type: KVKLogType = .os,
+                    saveInDB: Bool = true,
                     filename: String = #file,
                     line: Int = #line,
                     funcName: String = #function) {
@@ -54,12 +49,18 @@ open class KVKLogger: Sendable {
         let itemsTxt = items.reduce("") { (acc, item) in
             acc + "\(item) "
         }
-        handleLog(itemsTxt, type: .common, status: status, logType: type, details: details)
+        handleLog(itemsTxt,
+                  type: .common,
+                  status: status,
+                  logType: type,
+                  details: details,
+                  saveInDB: saveInDB)
     }
     
     public func network(_ items: Any...,
                         data: Data? = nil,
                         type: KVKLogType = .os,
+                        saveInDB: Bool = true,
                         filename: String? = nil,
                         line: Int? = nil,
                         funcName: String? = nil) {
@@ -70,7 +71,13 @@ open class KVKLogger: Sendable {
         let itemsTxt = items.reduce("") { (acc, item) in
             acc + "\(item) "
         }
-        handleLog(itemsTxt, data: data, type: .network, status: .debug, logType: type, details: details)
+        handleLog(itemsTxt, 
+                  data: data,
+                  type: .network,
+                  status: .debug,
+                  logType: type,
+                  details: details,
+                  saveInDB: saveInDB)
     }
     
     private func handleLog(_ items: String,
@@ -78,7 +85,8 @@ open class KVKLogger: Sendable {
                            type: ItemLogType,
                            status: KVKStatus = .info,
                            logType: KVKLogType,
-                           details: String?) {
+                           details: String?,
+                           saveInDB: Bool = true) {
         let date = Date()
         let item = ItemLogProxy(createdAt: date,
                                 data: data,
@@ -88,16 +96,11 @@ open class KVKLogger: Sendable {
                                 status: status,
                                 type: type)
         
-        switch type {
-        case .common where isEnableSaveIntoDB:
+        if isEnableSaveIntoDB && saveInDB {
             store.save(log: item)
-        case .network where isEnableSaveIntoDB && availabeSaveNetworkLogs:
-            store.save(log: item)
-        default:
-            break
         }
         
-        if isDebugMode != false {
+        if let isDebugMode, isDebugMode {
             printLog(items, details: details, itemType: type, status: status, type: logType, date: date)
         } else {
 #if DEBUG

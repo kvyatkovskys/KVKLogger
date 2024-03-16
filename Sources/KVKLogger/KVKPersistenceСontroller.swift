@@ -7,7 +7,7 @@
 
 import CoreData
 
-final class KVKPersistenceСontroller {
+final class KVKPersistenceСontroller: Sendable {
         
     let container: NSPersistentContainer
     let backgroundContext: NSManagedObjectContext
@@ -15,8 +15,7 @@ final class KVKPersistenceСontroller {
         container.viewContext
     }
     
-    //private let updateContext: NSManagedObjectContext
-    private var cacheDBURL: URL?
+    private let cacheDBURL: URL?
         
     init(inMemory: Bool = false) {
         let url = dataBaseURL
@@ -139,6 +138,9 @@ final class KVKPersistenceСontroller {
     }()
     
 }
+
+extension NSManagedObjectContext: @unchecked Sendable {}
+extension NSManagedObjectModel: @unchecked Sendable {}
 
 extension NSEntityDescription {
     convenience init<T>(class customClass: T.Type) where T: NSManagedObject {

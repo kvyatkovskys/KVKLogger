@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-final class KVKSharedData {
+final class KVKSharedData: @unchecked Sendable {
         
     static let shared = KVKSharedData()
         
