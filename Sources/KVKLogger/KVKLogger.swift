@@ -17,7 +17,7 @@ open class KVKLogger: @unchecked Sendable {
     /// Debug Mode
     /// if #DEBUG isn't setup in a project
     public var isDebugMode: Bool?
-    
+    public weak var delegate: KVKLoggerDelegate?
     public var isEnableSaveIntoDB: Bool = true
         
     private init() {
@@ -122,27 +122,39 @@ open class KVKLogger: @unchecked Sendable {
                           date: Date) {
         let iso8601Date = date.formatted(.iso8601)
         let icon = "\(status.icon) "
+        let iconWithDate = "\(icon)\(iso8601Date)"
         
         switch type {
         case .os:
+            let txt: String
             if let details {
-                status.saveOSLog("\(icon)\(iso8601Date) \(String(describing: items)) \(details)", type: itemType)
+                txt = "\(icon)\(iso8601Date) \(String(describing: items)) \(details)"
             } else {
-                status.saveOSLog("\(icon)\(iso8601Date) \(String(describing: items))", type: itemType)
+                txt = "\(icon)\(iso8601Date) \(String(describing: items))"
             }
+            status.saveOSLog(txt, type: itemType)
+            delegate?.didLog(txt)
         case .debug:
             if let details {
-                debugPrint("\(icon)\(iso8601Date)", items, details)
+                debugPrint(iconWithDate, items, details)
+                delegate?.didLog(iconWithDate, items, details)
             } else {
-                debugPrint("\(icon)\(iso8601Date)", items)
+                debugPrint(iconWithDate, items)
+                delegate?.didLog(iconWithDate, items)
             }
         case .print:
             if let details {
-                print("\(icon)\(iso8601Date)", items, details)
+                print(iconWithDate, items, details)
+                delegate?.didLog(iconWithDate, items, details)
             } else {
-                print("\(icon)\(iso8601Date)", items)
+                print(iconWithDate, items)
+                delegate?.didLog(iconWithDate, items)
             }
         }
     }
     
+}
+
+public protocol KVKLoggerDelegate: AnyObject {
+    func didLog(_ items: Any...)
 }
