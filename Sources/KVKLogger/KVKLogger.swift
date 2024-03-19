@@ -19,12 +19,15 @@ open class KVKLogger: @unchecked Sendable {
     public var isDebugMode: Bool?
     public weak var delegate: KVKLoggerDelegate?
     public var isEnableSaveIntoDB: Bool = true
+    
+    private var availabeSaveNetworkLogs = true
         
     private init() {
         store = KVKPersistenceСontroller()
     }
     
-    public func configure() {
+    public func configure(availabeSaveNetworkLogs: Bool = true) {
+        self.availabeSaveNetworkLogs = availabeSaveNetworkLogs
         let urls = store.container.persistentStoreDescriptions
             .compactMap({ $0.url?.lastPathComponent })
             .joined(separator: ", ")
@@ -38,7 +41,6 @@ open class KVKLogger: @unchecked Sendable {
     public func log(_ items: Any...,
                     status: KVKStatus = .info,
                     type: KVKLogType = .os,
-                    saveInDB: Bool = true,
                     filename: String = #file,
                     line: Int = #line,
                     funcName: String = #function) {
@@ -53,14 +55,12 @@ open class KVKLogger: @unchecked Sendable {
                   type: .common,
                   status: status,
                   logType: type,
-                  details: details,
-                  saveInDB: saveInDB)
+                  details: details)
     }
     
     public func network(_ items: Any...,
                         data: Data? = nil,
                         type: KVKLogType = .os,
-                        saveInDB: Bool = true,
                         filename: String? = nil,
                         line: Int? = nil,
                         funcName: String? = nil) {
@@ -76,8 +76,7 @@ open class KVKLogger: @unchecked Sendable {
                   type: .network,
                   status: .debug,
                   logType: type,
-                  details: details,
-                  saveInDB: saveInDB)
+                  details: details)
     }
     
     private func handleLog(_ items: String,
@@ -85,8 +84,7 @@ open class KVKLogger: @unchecked Sendable {
                            type: ItemLogType,
                            status: KVKStatus = .info,
                            logType: KVKLogType,
-                           details: String?,
-                           saveInDB: Bool = true) {
+                           details: String?) {
         let date = Date()
         let item = ItemLogProxy(createdAt: date,
                                 data: data,
@@ -96,8 +94,13 @@ open class KVKLogger: @unchecked Sendable {
                                 status: status,
                                 type: type)
         
-        if isEnableSaveIntoDB && saveInDB {
+        switch type {
+        case .common where isEnableSaveIntoDB:
             store.save(log: item)
+        case .network where isEnableSaveIntoDB && availabeSaveNetworkLogs:
+            store.save(log: item)
+        default:
+            break
         }
         
         if let isDebugMode, isDebugMode {
