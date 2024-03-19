@@ -30,9 +30,7 @@ struct ContentView: View {
                                      type: .os)
             }
             Button("Print network request") {
-                Task {
-                    await writeManyStringToLog()
-                }
+                writeManyStringToLog()
             }
             Button("Show console (Modal)") {
                 isOpenedConsole = true
@@ -55,7 +53,7 @@ struct ContentView: View {
         .padding()
     }
     
-    func writeManyStringToLog() async {
+    @MainActor func writeManyStringToLog() {
         let text = """
 POST https://practiceapp-dev.symplast.com/AppActions/Stats (200)BODY: {
     actionId = "362713CB-34EF-4C13-ABC4-6A2599643667";
@@ -273,12 +271,9 @@ POST https://practiceapp-dev.symplast.com/AppActions/Stats (200)BODY: {
 }
 [Result]: success(5941 bytes)
 """
-        await withTaskGroup(of: Void.self) { group in
-            for _ in 0..<50 {
-                group.addTask {
-                    await KVKLogger.shared.network(text, type: .os)
-                }
-            }
+        
+        for _ in 0..<50 {
+            KVKLogger.shared.network(text, type: .os)
         }
     }
 }

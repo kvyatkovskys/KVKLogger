@@ -22,10 +22,8 @@ struct KVKLoggerProxyView: View {
     
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.presentationMode) private var presentationMode
-    @FetchRequest(fetchRequest: ItemLog.fecth(), animation: .default)
-    
-    private var logs: FetchedResults<ItemLog>
-    @ObservedObject private var vm = KVKLoggerVM()
+    @FetchRequest(fetchRequest: ItemLog.request, animation: .none) private var logs: FetchedResults<ItemLog>
+    @StateObject private var vm = KVKLoggerVM()
     
     var body: some View {
         navigationView

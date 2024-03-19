@@ -9,28 +9,25 @@ import SwiftUI
 import CoreData
 import OSLog
 
-open class KVKLogger {
+open class KVKLogger: @unchecked Sendable {
 
     let store: KVKPersistenceСontroller
-    
-    private var availabeSaveNetworkLogs = true
-    
+        
     public static let shared = KVKLogger()
     /// Debug Mode
     /// if #DEBUG isn't setup in a project
     public var isDebugMode: Bool?
-    
+    public weak var delegate: KVKLoggerDelegate?
     public var isEnableSaveIntoDB: Bool = true
     
-    @ObservedObject var vm = KVKLoggerVM()
-    
-    public init() {
+    private var availabeSaveNetworkLogs = true
+        
+    private init() {
         store = KVKPersistenceСontroller()
     }
     
     public func configure(availabeSaveNetworkLogs: Bool = true) {
         self.availabeSaveNetworkLogs = availabeSaveNetworkLogs
-        
         let urls = store.container.persistentStoreDescriptions
             .compactMap({ $0.url?.lastPathComponent })
             .joined(separator: ", ")
@@ -38,7 +35,7 @@ open class KVKLogger {
             debugPrint("Problem with configuring local DB!")
             return
         }
-        debugPrint("Local DB: [\(urls)] is configured!")
+        debugPrint("KVKLogger DB: [\(urls)] is configured!")
     }
     
     public func log(_ items: Any...,
@@ -54,7 +51,11 @@ open class KVKLogger {
         let itemsTxt = items.reduce("") { (acc, item) in
             acc + "\(item) "
         }
-        handleLog(itemsTxt, type: .common, status: status, logType: type, details: details)
+        handleLog(itemsTxt,
+                  type: .common,
+                  status: status,
+                  logType: type,
+                  details: details)
     }
     
     public func network(_ items: Any...,
@@ -70,7 +71,12 @@ open class KVKLogger {
         let itemsTxt = items.reduce("") { (acc, item) in
             acc + "\(item) "
         }
-        handleLog(itemsTxt, data: data, type: .network, status: .debug, logType: type, details: details)
+        handleLog(itemsTxt, 
+                  data: data,
+                  type: .network,
+                  status: .debug,
+                  logType: type,
+                  details: details)
     }
     
     private func handleLog(_ items: String,
@@ -97,7 +103,7 @@ open class KVKLogger {
             break
         }
         
-        if isDebugMode != false {
+        if let isDebugMode, isDebugMode {
             printLog(items, details: details, itemType: type, status: status, type: logType, date: date)
         } else {
 #if DEBUG
@@ -119,27 +125,39 @@ open class KVKLogger {
                           date: Date) {
         let iso8601Date = date.formatted(.iso8601)
         let icon = "\(status.icon) "
+        let iconWithDate = "\(icon)\(iso8601Date)"
         
         switch type {
         case .os:
+            let txt: String
             if let details {
-                status.saveOSLog("\(icon)\(iso8601Date) \(String(describing: items)) \(details)", type: itemType)
+                txt = "\(icon)\(iso8601Date) \(String(describing: items)) \(details)"
             } else {
-                status.saveOSLog("\(icon)\(iso8601Date) \(String(describing: items))", type: itemType)
+                txt = "\(icon)\(iso8601Date) \(String(describing: items))"
             }
+            status.saveOSLog(txt, type: itemType)
+            delegate?.didLog(txt)
         case .debug:
             if let details {
-                debugPrint("\(icon)\(iso8601Date)", items, details)
+                debugPrint(iconWithDate, items, details)
+                delegate?.didLog(iconWithDate, items, details)
             } else {
-                debugPrint("\(icon)\(iso8601Date)", items)
+                debugPrint(iconWithDate, items)
+                delegate?.didLog(iconWithDate, items)
             }
         case .print:
             if let details {
-                print("\(icon)\(iso8601Date)", items, details)
+                print(iconWithDate, items, details)
+                delegate?.didLog(iconWithDate, items, details)
             } else {
-                print("\(icon)\(iso8601Date)", items)
+                print(iconWithDate, items)
+                delegate?.didLog(iconWithDate, items)
             }
         }
     }
     
+}
+
+public protocol KVKLoggerDelegate: AnyObject {
+    func didLog(_ items: Any...)
 }
