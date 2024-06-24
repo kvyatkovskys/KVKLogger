@@ -33,7 +33,6 @@ final class KVKLoggerVM: ObservableObject {
     private var cancellable = Set<AnyCancellable>()
     
     init() {
-        sizeOfDB = KVKLogger.shared.store.dbSize
         clearByPublisher
             .receive(on: DispatchQueue.main)
             .sink { (newValue) in
@@ -44,6 +43,10 @@ final class KVKLoggerVM: ObservableObject {
     
     deinit {
         cancellable.removeAll()
+    }
+    
+    func checkDBSize() {
+        sizeOfDB = KVKLogger.shared.store.dbSize
     }
     
     func getPredicatesBy(query: String? = nil,

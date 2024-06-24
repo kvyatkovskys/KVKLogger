@@ -27,6 +27,9 @@ struct KVKLoggerProxyView: View {
     
     var body: some View {
         navigationView
+            .onAppear {
+                vm.checkDBSize()
+            }
 #if os(iOS)
             .searchable(text: $vm.query,
                         placement: .navigationBarDrawer(displayMode: .always))
