@@ -159,6 +159,9 @@ struct KVKLoggerProxyView: View {
         Menu {
             filtersMenu
             Divider()
+            if let txt = vm.sizeOfDB {
+                Text("Size of local DB: \(txt)")
+            }
             clearMenu
         } label: {
             Image(systemName: "gear")
@@ -203,6 +206,7 @@ struct KVKLoggerProxyView: View {
             case .clearAll:
                 Button(role: .destructive) {
                     viewContext.deleteAll()
+                    vm.sizeOfDB = nil
                 } label: {
                     Text(item.item.title)
                 }

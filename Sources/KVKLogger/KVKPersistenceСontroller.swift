@@ -14,7 +14,14 @@ final class KVKPersistenceСontroller: Sendable {
     var viewContext: NSManagedObjectContext {
         container.viewContext
     }
-    
+    var dbSize: String? {
+        guard let cacheDBURL, let dt = try? Data(contentsOf: cacheDBURL) else { return nil }
+        let bcf = ByteCountFormatter()
+        bcf.allowedUnits = [.useAll]
+        bcf.countStyle = .file
+        let size = bcf.string(fromByteCount: Int64(dt.count))
+        return size
+    }
     private let cacheDBURL: URL?
         
     init(inMemory: Bool = false) {
@@ -92,7 +99,7 @@ final class KVKPersistenceСontroller: Sendable {
     }
         
     private let dataBaseURL: URL = {
-        let url = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         var resultURL: URL
         if #available(iOS 16.0, macOS 13.0, *) {
             resultURL = url?

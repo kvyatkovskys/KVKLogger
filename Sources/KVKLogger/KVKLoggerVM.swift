@@ -15,6 +15,7 @@ final class KVKLoggerVM: ObservableObject {
     @Published var isDatePopoverPresented = false
     @Published var query = ""
     @Published var selectedDate: KVKDatePopoverView.DateContainer?
+    @Published var sizeOfDB: String?
     // @Published var selectedGroupBy: CurateSubItem = .none
     // @Published var selectedFilterBy: CurateSubItem = .none
     
@@ -32,12 +33,17 @@ final class KVKLoggerVM: ObservableObject {
     private var cancellable = Set<AnyCancellable>()
     
     init() {
+        sizeOfDB = KVKLogger.shared.store.dbSize
         clearByPublisher
             .receive(on: DispatchQueue.main)
             .sink { (newValue) in
                 KVKSharedData.shared.clearBy = newValue
             }
             .store(in: &cancellable)
+    }
+    
+    deinit {
+        cancellable.removeAll()
     }
     
     func getPredicatesBy(query: String? = nil,
