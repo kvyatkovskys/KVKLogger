@@ -81,7 +81,7 @@ open class KVKLogger: @unchecked Sendable {
     
     private func handleLog(_ items: String,
                            data: Data? = nil,
-                           type: ItemLogType,
+                           type: KVKItemLogType,
                            status: KVKStatus = .info,
                            logType: KVKLogType,
                            details: String?) {
@@ -117,12 +117,14 @@ open class KVKLogger: @unchecked Sendable {
         return components.isEmpty ? "" : (components.last ?? "")
     }
     
-    private func printLog(_ items: Any,
-                          details: String? = nil,
-                          itemType: ItemLogType,
-                          status: KVKStatus,
-                          type: KVKLogType,
-                          date: Date) {
+    private func printLog(
+        _ items: Any,
+        details: String? = nil,
+        itemType: KVKItemLogType,
+        status: KVKStatus,
+        type: KVKLogType,
+        date: Date
+    ) {
         let iso8601Date = date.formatted(.iso8601)
         let icon = "\(status.icon) "
         let iconWithDate = "\(icon)\(iso8601Date)"
@@ -159,5 +161,11 @@ open class KVKLogger: @unchecked Sendable {
 }
 
 public protocol KVKLoggerDelegate: AnyObject {
-    func didLog(_ items: Any...)
+    func didLog(_ items: Any..., type: KVKItemLogType)
+}
+
+public extension KVKLoggerDelegate {
+    func didLog(_ items: Any..., type: KVKItemLogType = .common) {
+        didLog(items, type: type)
+    }
 }

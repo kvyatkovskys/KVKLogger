@@ -149,7 +149,7 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
         }
     }
     
-    func saveOSLog(_ items: String, type: ItemLogType) {
+    func saveOSLog(_ items: String, type: KVKItemLogType) {
         let logger: Logger
         switch type {
         case .network:
@@ -264,7 +264,7 @@ struct SettingContainer: Identifiable {
     }
 }
 
-enum ItemLogType: String {
+public enum KVKItemLogType: String {
     case network, common
 }
 
@@ -320,7 +320,7 @@ struct ItemLogProxy {
     var items: String?
     var logType: KVKLogType?
     var status: KVKStatus?
-    var type: ItemLogType?
+    var type: KVKItemLogType?
 }
 
 final class ItemLog: NSManagedObject {
@@ -389,10 +389,10 @@ extension ItemLog {
         set { logType_ = newValue.rawValue }
     }
     
-    var type: ItemLogType {
+    var type: KVKItemLogType {
         get {
             guard let item = type_ else { return .common }
-            return ItemLogType(rawValue: item) ?? .common
+            return KVKItemLogType(rawValue: item) ?? .common
         }
         set { type_ = newValue.rawValue }
     }
