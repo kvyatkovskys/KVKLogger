@@ -138,22 +138,22 @@ open class KVKLogger: @unchecked Sendable {
                 txt = "\(icon)\(iso8601Date) \(String(describing: items))"
             }
             status.saveOSLog(txt, type: itemType)
-            delegate?.didLog(txt)
+            delegate?.didLog(txt, type: itemType)
         case .debug:
             if let details {
                 debugPrint(iconWithDate, items, details)
-                delegate?.didLog(iconWithDate, items, details)
+                delegate?.didLog(iconWithDate, items, details, type: itemType)
             } else {
                 debugPrint(iconWithDate, items)
-                delegate?.didLog(iconWithDate, items)
+                delegate?.didLog(iconWithDate, items, type: itemType)
             }
         case .print:
             if let details {
                 print(iconWithDate, items, details)
-                delegate?.didLog(iconWithDate, items, details)
+                delegate?.didLog(iconWithDate, items, details, type: itemType)
             } else {
                 print(iconWithDate, items)
-                delegate?.didLog(iconWithDate, items)
+                delegate?.didLog(iconWithDate, items, type: itemType)
             }
         }
     }
