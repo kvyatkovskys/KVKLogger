@@ -1,6 +1,6 @@
 //
 //  KVKPersistenceСontroller.swift
-//  
+//
 //
 //  Created by Sergei Kviatkovskii on 1/31/23.
 //
@@ -8,42 +8,46 @@
 import CoreData
 
 final class KVKPersistenceСontroller: Sendable {
-        
+
     let container: NSPersistentContainer
     let backgroundContext: NSManagedObjectContext
     var viewContext: NSManagedObjectContext {
         container.viewContext
     }
+    /// Returns the file size of the SQLite store without loading it into memory.
     var dbSize: String? {
-        guard let cacheDBURL, let dt = try? Data(contentsOf: cacheDBURL) else { return nil }
+        guard let cacheDBURL,
+              let attrs = try? FileManager.default.attributesOfItem(atPath: cacheDBURL.path),
+              let bytes = attrs[.size] as? Int64 else { return nil }
         let bcf = ByteCountFormatter()
         bcf.allowedUnits = [.useAll]
         bcf.countStyle = .file
-        let size = bcf.string(fromByteCount: Int64(dt.count))
-        return size
+        return bcf.string(fromByteCount: bytes)
     }
     private let cacheDBURL: URL?
-        
+
     init(inMemory: Bool = false) {
         let url = dataBaseURL
-        cacheDBURL = url
+        // inMemory stores have no on-disk file to check
+        cacheDBURL = inMemory ? nil : url
         let dbName = url.lastPathComponent
+        container = NSPersistentContainer(name: dbName, managedObjectModel: dbModel)
+
         if inMemory {
-            container = NSPersistentContainer(name: dbName, managedObjectModel: dbModel)
+            // Point the store at /dev/null so writes are discarded
             if #available(iOS 16.0, macOS 13.0, *) {
                 container.persistentStoreDescriptions.first!.url = URL(filePath: "/dev/null")
             } else {
                 container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
             }
         } else {
-            container = NSPersistentContainer(name: dbName, managedObjectModel: dbModel)
+            let store = NSPersistentStoreDescription(url: url)
+            store.shouldMigrateStoreAutomatically = true
+            store.shouldInferMappingModelAutomatically = true
+            container.persistentStoreDescriptions = [store]
         }
-        
-        let store = NSPersistentStoreDescription(url: url)
-        store.shouldMigrateStoreAutomatically = true
-        store.shouldInferMappingModelAutomatically = true
-        container.persistentStoreDescriptions = [store]
-        container.loadPersistentStores { (desc, error) in
+
+        container.loadPersistentStores { (_, error) in
             if let error = error as? NSError {
                 debugPrint("KVKLogger: Unresolved error \(error), \(error.userInfo)")
             }
@@ -51,17 +55,16 @@ final class KVKPersistenceСontroller: Sendable {
         backgroundContext = container.newBackgroundContext()
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
-        
+
         checkOldRecordsAndDeleteIfNeeded()
     }
-    
+
     func save(log: ItemLogProxy) {
-        // temporary checking a file
         if let url = cacheDBURL, !FileManager.default.fileExists(atPath: url.path) {
             debugPrint("KVKLogger: Can't find DB in directory.")
             return
         }
-                
+
         backgroundContext.performAndWait { [weak self] in
             guard let self else { return }
             do {
@@ -79,25 +82,31 @@ final class KVKPersistenceСontroller: Sendable {
             }
         }
     }
-    
+
     private func checkOldRecordsAndDeleteIfNeeded() {
         debugPrint("KVKLogger: Checking the old records; Last clear date - \(KVKSharedData.shared.lastClearByDate); Auto deleting \(KVKSharedData.shared.clearBy.rawValue).")
         if let url = cacheDBURL, !FileManager.default.fileExists(atPath: url.path) {
             debugPrint("KVKLogger: Can't find DB in directory.")
             return
         }
-        
-        // check if we need to delete the old records
-        if let lastRecord = backgroundContext.fetchLastRecord(),
-           KVKSharedData.shared.needToDeleteOldRecords(from: lastRecord.createdAt) {
-            backgroundContext.deleteAll(onlyOldRecords: true)
-            KVKSharedData.shared.lastClearByDate = Date()
-            debugPrint("KVKLogger: The old records was successefully deleted.")
-        } else {
-            debugPrint("KVKLogger: No need to delete the old records.")
+
+        // Run on the background context's private queue
+        backgroundContext.performAndWait { [weak self] in
+            guard let self else { return }
+            if self.backgroundContext.fetchLastRecord() != nil,
+               KVKSharedData.shared.needToDeleteOldRecords() {
+                self.backgroundContext.deleteAll(
+                    onlyOldRecords: true,
+                    additionalContexts: [self.container.viewContext]
+                )
+                KVKSharedData.shared.lastClearByDate = Date()
+                debugPrint("KVKLogger: The old records was successefully deleted.")
+            } else {
+                debugPrint("KVKLogger: No need to delete the old records.")
+            }
         }
     }
-        
+
     private let dataBaseURL: URL = {
         let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         var resultURL: URL
@@ -110,13 +119,13 @@ final class KVKPersistenceСontroller: Sendable {
                 .appendingPathComponent("Logs", isDirectory: true)
                 .appendingPathComponent("com.github.kviatkovskii.kvkloader", isDirectory: true) ?? URL(fileURLWithPath: "/dev/null")
         }
-        
+
         if !FileManager.default.fileExists(atPath: resultURL.path) {
             try? FileManager.default.createDirectory(at: resultURL,
                                                      withIntermediateDirectories: true,
                                                      attributes: [:])
         }
-        
+
         if #available(iOS 16.0, macOS 13.0, *) {
             resultURL = resultURL.appending(component: "consoleDB.sqlite")
         } else {
@@ -124,11 +133,11 @@ final class KVKPersistenceСontroller: Sendable {
         }
         return resultURL
     }()
-        
+
     private let dbModel: NSManagedObjectModel = {
         typealias Entity = NSEntityDescription
         typealias Attribute = NSAttributeDescription
-        
+
         let itemLog = Entity(class: ItemLog.self)
         itemLog.properties = [
             Attribute(name: "createdAt_", type: .dateAttributeType),
@@ -143,7 +152,7 @@ final class KVKPersistenceСontroller: Sendable {
         model.entities = [itemLog]
         return model
     }()
-    
+
 }
 
 extension NSManagedObjectContext: @unchecked Sendable {}
@@ -170,7 +179,7 @@ extension NSAttributeDescription {
 }
 
 extension NSManagedObjectContext {
-    
+
     func fetchLastRecord() -> ItemLog? {
         let request = NSFetchRequest<ItemLog>(entityName: ItemLog.entityName)
         request.fetchLimit = 1
@@ -183,13 +192,19 @@ extension NSManagedObjectContext {
             return nil
         }
     }
-    
-    func deleteAll(onlyOldRecords: Bool = false) {
+
+    /// Batch-deletes all records (or only records older than the configured schedule).
+    /// Pass `additionalContexts` to propagate the deletion to other contexts (e.g. viewContext).
+    func deleteAll(onlyOldRecords: Bool = false, additionalContexts: [NSManagedObjectContext] = []) {
         do {
-            let fetchRequest: NSFetchRequest<NSFetchRequestResult>
-            fetchRequest = NSFetchRequest(entityName: ItemLog.entityName)
+            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = NSFetchRequest(entityName: ItemLog.entityName)
             if onlyOldRecords {
-                fetchRequest.predicate = NSPredicate(format: "createdAt_ < %@", KVKSharedData.shared.lastClearByDate as NSDate)
+                let cutoff = Calendar.current.date(
+                    byAdding: .day,
+                    value: -KVKSharedData.shared.clearBy.daysInLive,
+                    to: Date()
+                ) ?? Date()
+                fetchRequest.predicate = NSPredicate(format: "createdAt_ < %@", cutoff as NSDate)
             }
             let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
             deleteRequest.resultType = .resultTypeObjectIDs
@@ -198,13 +213,14 @@ extension NSManagedObjectContext {
             guard let deleteResult = batchDelete?.result as? [NSManagedObjectID] else { return }
 
             let deletedObjects: [String: Any] = [NSDeletedObjectsKey: deleteResult]
-            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: deletedObjects, into: [self])
+            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: deletedObjects,
+                                               into: [self] + additionalContexts)
         } catch {
             let nsError = error as NSError
             debugPrint("KVKLogger: Unresolved error \(nsError), \(nsError.userInfo)")
         }
     }
-    
+
     func saveContext() {
         guard hasChanges else { return }
         performAndWait { [weak self] in
@@ -216,5 +232,5 @@ extension NSManagedObjectContext {
             }
         }
     }
-    
+
 }

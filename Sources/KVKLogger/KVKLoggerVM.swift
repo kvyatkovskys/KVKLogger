@@ -34,6 +34,8 @@ final class KVKLoggerVM: ObservableObject {
     
     init() {
         clearByPublisher
+            .dropFirst()
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { (newValue) in
                 KVKSharedData.shared.clearBy = newValue

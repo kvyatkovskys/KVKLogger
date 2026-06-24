@@ -21,8 +21,7 @@ public extension KVKLoggerRouter where Self: UIViewController {
     }
     
     func pushToKVKLogger() {
-        guard let vc = createKVKLoggerController().navigationController?.viewControllers.first else { return }
-        navigationController?.pushViewController(vc, animated: true)
+        navigationController?.pushViewController(createKVKLoggerController(), animated: true)
     }
     
     func createKVKLoggerController() -> UIHostingController<KVKLoggerView> {
