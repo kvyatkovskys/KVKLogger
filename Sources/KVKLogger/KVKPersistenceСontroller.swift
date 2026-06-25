@@ -11,6 +11,7 @@ final class KVKPersistenceСontroller: Sendable {
 
     let container: NSPersistentContainer
     let backgroundContext: NSManagedObjectContext
+    let isReady: Bool
     var viewContext: NSManagedObjectContext {
         container.viewContext
     }
@@ -19,26 +20,29 @@ final class KVKPersistenceСontroller: Sendable {
         guard let cacheDBURL,
               let attrs = try? FileManager.default.attributesOfItem(atPath: cacheDBURL.path),
               let bytes = attrs[.size] as? Int64 else { return nil }
-        let bcf = ByteCountFormatter()
-        bcf.allowedUnits = [.useAll]
-        bcf.countStyle = .file
-        return bcf.string(fromByteCount: bytes)
+        return Self.byteFormatter.string(fromByteCount: bytes)
     }
     private let cacheDBURL: URL?
+    private static let byteFormatter: ByteCountFormatter = {
+        let f = ByteCountFormatter()
+        f.allowedUnits = [.useAll]
+        f.countStyle = .file
+        return f
+    }()
 
     init(inMemory: Bool = false) {
         let url = dataBaseURL
-        // inMemory stores have no on-disk file to check
         cacheDBURL = inMemory ? nil : url
         let dbName = url.lastPathComponent
         container = NSPersistentContainer(name: dbName, managedObjectModel: dbModel)
 
         if inMemory {
-            // Point the store at /dev/null so writes are discarded
-            if #available(iOS 16.0, macOS 13.0, *) {
-                container.persistentStoreDescriptions.first!.url = URL(filePath: "/dev/null")
-            } else {
-                container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
+            if let firstDescription = container.persistentStoreDescriptions.first {
+                if #available(iOS 16.0, macOS 13.0, *) {
+                    firstDescription.url = URL(filePath: "/dev/null")
+                } else {
+                    firstDescription.url = URL(fileURLWithPath: "/dev/null")
+                }
             }
         } else {
             let store = NSPersistentStoreDescription(url: url)
@@ -47,26 +51,26 @@ final class KVKPersistenceСontroller: Sendable {
             container.persistentStoreDescriptions = [store]
         }
 
+        var loaded = true
         container.loadPersistentStores { (_, error) in
             if let error = error as? NSError {
+                loaded = false
                 debugPrint("KVKLogger: Unresolved error \(error), \(error.userInfo)")
             }
         }
+        isReady = loaded
         backgroundContext = container.newBackgroundContext()
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
 
-        checkOldRecordsAndDeleteIfNeeded()
+        if isReady {
+            checkOldRecordsAndDeleteIfNeeded()
+        }
     }
 
     func save(log: ItemLogProxy) {
-        if let url = cacheDBURL, !FileManager.default.fileExists(atPath: url.path) {
-            debugPrint("KVKLogger: Can't find DB in directory.")
-            return
-        }
-
-        backgroundContext.performAndWait { [weak self] in
-            guard let self else { return }
+        guard isReady else { return }
+        backgroundContext.performAndWait {
             do {
                 let itemLog = ItemLog(context: self.backgroundContext)
                 itemLog.createdAt_ = log.createdAt
@@ -84,16 +88,10 @@ final class KVKPersistenceСontroller: Sendable {
     }
 
     private func checkOldRecordsAndDeleteIfNeeded() {
+        guard isReady else { return }
         debugPrint("KVKLogger: Checking the old records; Last clear date - \(KVKSharedData.shared.lastClearByDate); Auto deleting \(KVKSharedData.shared.clearBy.rawValue).")
-        if let url = cacheDBURL, !FileManager.default.fileExists(atPath: url.path) {
-            debugPrint("KVKLogger: Can't find DB in directory.")
-            return
-        }
-
-        // Run on the background context's private queue
-        backgroundContext.performAndWait { [weak self] in
-            guard let self else { return }
-            if self.backgroundContext.fetchLastRecord() != nil,
+        backgroundContext.performAndWait {
+            if self.backgroundContext.fetchOldestRecord() != nil,
                KVKSharedData.shared.needToDeleteOldRecords() {
                 self.backgroundContext.deleteAll(
                     onlyOldRecords: true,
@@ -155,8 +153,8 @@ final class KVKPersistenceСontroller: Sendable {
 
 }
 
-extension NSManagedObjectContext: @unchecked Sendable {}
-extension NSManagedObjectModel: @unchecked Sendable {}
+// Safe: dbModel is mutated only during its lazy initializer, then read-only for the process lifetime.
+extension NSManagedObjectModel: @unchecked @retroactive Sendable {}
 
 extension NSEntityDescription {
     convenience init<T>(class customClass: T.Type) where T: NSManagedObject {
@@ -180,7 +178,7 @@ extension NSAttributeDescription {
 
 extension NSManagedObjectContext {
 
-    func fetchLastRecord() -> ItemLog? {
+    func fetchOldestRecord() -> ItemLog? {
         let request = NSFetchRequest<ItemLog>(entityName: ItemLog.entityName)
         request.fetchLimit = 1
         request.sortDescriptors = [NSSortDescriptor(keyPath: \ItemLog.createdAt_, ascending: true)]

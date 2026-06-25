@@ -201,17 +201,22 @@ struct KVKPersistenceControllerTests {
         return results
     }
 
+    @Test("isReady is true for a successfully loaded in-memory store")
+    func isReadyTrueForInMemory() {
+        #expect(makeController().isReady == true)
+    }
+
     @Test("dbSize is nil for an in-memory store")
     func dbSizeNilForInMemory() {
         #expect(makeController().dbSize == nil)
     }
 
-    @Test("fetchLastRecord returns nil when the store is empty")
-    func fetchLastRecordEmptyStore() {
+    @Test("fetchOldestRecord returns nil when the store is empty")
+    func fetchOldestRecordEmptyStore() {
         let controller = makeController()
         var result: ItemLog? = nil
         controller.backgroundContext.performAndWait {
-            result = controller.backgroundContext.fetchLastRecord()
+            result = controller.backgroundContext.fetchOldestRecord()
         }
         #expect(result == nil)
     }
@@ -261,8 +266,8 @@ struct KVKPersistenceControllerTests {
         #expect(results.first?.data == data)
     }
 
-    @Test("fetchLastRecord returns the oldest saved entry")
-    func fetchLastRecordReturnsOldest() {
+    @Test("fetchOldestRecord returns the oldest saved entry")
+    func fetchOldestRecordReturnsOldest() {
         let controller = makeController()
         let proxy = ItemLogProxy(
             createdAt: Date(),
@@ -274,7 +279,7 @@ struct KVKPersistenceControllerTests {
 
         var result: ItemLog? = nil
         controller.backgroundContext.performAndWait {
-            result = controller.backgroundContext.fetchLastRecord()
+            result = controller.backgroundContext.fetchOldestRecord()
         }
         #expect(result != nil)
         #expect(result?.items == "oldest")
