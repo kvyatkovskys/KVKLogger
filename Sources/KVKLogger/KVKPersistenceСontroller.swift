@@ -24,10 +24,10 @@ final class KVKPersistenceСontroller: Sendable {
     }
     private let cacheDBURL: URL?
     private static let byteFormatter: ByteCountFormatter = {
-        let f = ByteCountFormatter()
-        f.allowedUnits = [.useAll]
-        f.countStyle = .file
-        return f
+        let fmt = ByteCountFormatter()
+        fmt.allowedUnits = [.useAll]
+        fmt.countStyle = .file
+        return fmt
     }()
 
     init(inMemory: Bool = false) {
