@@ -149,7 +149,7 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
         }
     }
     
-    func saveOSLog(_ items: String, type: KVKItemLogType) {
+    func saveOSLog(_ items: String, type: KVKItemLogType, privacy: KVKLogPrivacy = .public) {
         let logger: Logger
         switch type {
         case .network:
@@ -157,26 +157,32 @@ public enum KVKStatus: Identifiable, Hashable, RawRepresentable, CaseIterable {
         case .common:
             logger = Logger.logs
         }
-        
-        switch self {
-        case .info, .custom:
-            logger.info("\(items, privacy: .public)")
-        case .error:
-            logger.error("\(items, privacy: .public)")
-        case .debug:
-            logger.debug("\(items, privacy: .public)")
-        case .warning:
-            logger.warning("\(items, privacy: .public)")
-        case .verbose:
-            logger.trace("\(items, privacy: .public)")
-        case .fault:
-            logger.fault("\(items, privacy: .public)")
-        case .critical:
-            logger.critical("\(items, privacy: .public)")
-        case .notice:
-            logger.notice("\(items, privacy: .public)")
-        case .none:
-            break
+
+        // OSLog privacy annotations must be compile-time constants, so branch explicitly.
+        if privacy == .private {
+            switch self {
+            case .info, .custom: logger.info("\(items, privacy: .private)")
+            case .error:         logger.error("\(items, privacy: .private)")
+            case .debug:         logger.debug("\(items, privacy: .private)")
+            case .warning:       logger.warning("\(items, privacy: .private)")
+            case .verbose:       logger.trace("\(items, privacy: .private)")
+            case .fault:         logger.fault("\(items, privacy: .private)")
+            case .critical:      logger.critical("\(items, privacy: .private)")
+            case .notice:        logger.notice("\(items, privacy: .private)")
+            case .none:          break
+            }
+        } else {
+            switch self {
+            case .info, .custom: logger.info("\(items, privacy: .public)")
+            case .error:         logger.error("\(items, privacy: .public)")
+            case .debug:         logger.debug("\(items, privacy: .public)")
+            case .warning:       logger.warning("\(items, privacy: .public)")
+            case .verbose:       logger.trace("\(items, privacy: .public)")
+            case .fault:         logger.fault("\(items, privacy: .public)")
+            case .critical:      logger.critical("\(items, privacy: .public)")
+            case .notice:        logger.notice("\(items, privacy: .public)")
+            case .none:          break
+            }
         }
     }
     

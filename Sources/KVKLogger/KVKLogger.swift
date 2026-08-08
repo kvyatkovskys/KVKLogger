@@ -1,6 +1,6 @@
 //
 //  KVKLogger.swift
-//  
+//
 //
 //  Created by Sergei Kviatkovskii on 1/29/23.
 //
@@ -9,25 +9,58 @@ import SwiftUI
 import CoreData
 import OSLog
 
-open class KVKLogger: @unchecked Sendable {
+/// Controls privacy of messages sent to the unified OS logging system.
+public enum KVKLogPrivacy {
+    /// Log content is visible in Console.app and `log collect` (default, preserves existing behaviour).
+    case `public`
+    /// Log content is redacted in Console.app to protect sensitive data.
+    case `private`
+}
+
+public final class KVKLogger: @unchecked Sendable {
 
     let store: KVKPersistenceСontroller
-        
+
     public static let shared = KVKLogger()
-    /// Debug Mode
-    /// if #DEBUG isn't setup in a project
-    public var isDebugMode: Bool?
-    public weak var delegate: KVKLoggerDelegate?
-    public var isEnableSaveIntoDB: Bool = true
-    
-    private var availabeSaveNetworkLogs = true
-        
+
+    private let lock = NSLock()
+
+    // MARK: - Thread-safe public properties
+
+    private var _isDebugMode: Bool?
+    /// When set, overrides #DEBUG flag to control console output.
+    public var isDebugMode: Bool? {
+        get { withLock { _isDebugMode } }
+        set { withLock { _isDebugMode = newValue } }
+    }
+
+    private weak var _delegate: KVKLoggerDelegate?
+    public weak var delegate: KVKLoggerDelegate? {
+        get { withLock { _delegate } }
+        set { withLock { _delegate = newValue } }
+    }
+
+    private var _isEnableSaveIntoDB: Bool = true
+    public var isEnableSaveIntoDB: Bool {
+        get { withLock { _isEnableSaveIntoDB } }
+        set { withLock { _isEnableSaveIntoDB = newValue } }
+    }
+
+    private var _logPrivacy: KVKLogPrivacy = .public
+    /// Privacy level applied to all OS log messages. Defaults to `.public` for backward compatibility.
+    public var logPrivacy: KVKLogPrivacy {
+        get { withLock { _logPrivacy } }
+        set { withLock { _logPrivacy = newValue } }
+    }
+
+    private var _availabeSaveNetworkLogs = true
+
     private init() {
         store = KVKPersistenceСontroller()
     }
-    
+
     public func configure(availabeSaveNetworkLogs: Bool = true) {
-        self.availabeSaveNetworkLogs = availabeSaveNetworkLogs
+        withLock { _availabeSaveNetworkLogs = availabeSaveNetworkLogs }
         let urls = store.container.persistentStoreDescriptions
             .compactMap({ $0.url?.lastPathComponent })
             .joined(separator: ", ")
@@ -37,7 +70,7 @@ open class KVKLogger: @unchecked Sendable {
         }
         debugPrint("KVKLogger DB: [\(urls)] is configured!")
     }
-    
+
     public func log(_ items: Any...,
                     status: KVKStatus = .info,
                     type: KVKLogType = .os,
@@ -48,16 +81,10 @@ open class KVKLogger: @unchecked Sendable {
         if status == .verbose {
             details = "file: \(sourceFileName(filePath: filename))\nline: \(line)\nfunction: \(funcName)"
         }
-        let itemsTxt = items.reduce("") { (acc, item) in
-            acc + "\(item) "
-        }
-        handleLog(itemsTxt,
-                  type: .common,
-                  status: status,
-                  logType: type,
-                  details: details)
+        let itemsTxt = items.reduce("") { (acc, item) in acc + "\(item) " }
+        handleLog(itemsTxt, type: .common, status: status, logType: type, details: details)
     }
-    
+
     public func network(_ items: Any...,
                         data: Data? = nil,
                         type: KVKLogType = .os,
@@ -68,17 +95,10 @@ open class KVKLogger: @unchecked Sendable {
         if let filename, let line, let funcName {
             details = "file: \(sourceFileName(filePath: filename))\nline: \(line)\nfunction: \(funcName)"
         }
-        let itemsTxt = items.reduce("") { (acc, item) in
-            acc + "\(item) "
-        }
-        handleLog(itemsTxt, 
-                  data: data,
-                  type: .network,
-                  status: .debug,
-                  logType: type,
-                  details: details)
+        let itemsTxt = items.reduce("") { (acc, item) in acc + "\(item) " }
+        handleLog(itemsTxt, data: data, type: .network, status: .debug, logType: type, details: details)
     }
-    
+
     private func handleLog(_ items: String,
                            data: Data? = nil,
                            type: KVKItemLogType,
@@ -93,42 +113,51 @@ open class KVKLogger: @unchecked Sendable {
                                 logType: logType,
                                 status: status,
                                 type: type)
-        
+
+        // Capture mutable state atomically to avoid data races
+        let (enableDB, networkLogs, debugMode, privacy, delegateRef) = withLock {
+            (_isEnableSaveIntoDB, _availabeSaveNetworkLogs, _isDebugMode, _logPrivacy, _delegate)
+        }
+
         switch type {
-        case .common where isEnableSaveIntoDB:
+        case .common where enableDB:
             store.save(log: item)
-        case .network where isEnableSaveIntoDB && availabeSaveNetworkLogs:
+        case .network where enableDB && networkLogs:
             store.save(log: item)
         default:
             break
         }
-        
-        if let isDebugMode, isDebugMode {
-            printLog(items, details: details, itemType: type, status: status, type: logType, date: date)
+
+        if let debugMode, debugMode {
+            printLog(items, details: details, itemType: type, status: status, type: logType,
+                     date: date, privacy: privacy, delegate: delegateRef)
         } else {
 #if DEBUG
-            printLog(items, details: details, itemType: type, status: status, type: logType, date: date)
+            printLog(items, details: details, itemType: type, status: status, type: logType,
+                     date: date, privacy: privacy, delegate: delegateRef)
 #endif
         }
     }
-    
+
     private func sourceFileName(filePath: String) -> String {
         let components = filePath.components(separatedBy: "/")
         return components.isEmpty ? "" : (components.last ?? "")
     }
-    
+
     private func printLog(
         _ items: Any,
         details: String? = nil,
         itemType: KVKItemLogType,
         status: KVKStatus,
         type: KVKLogType,
-        date: Date
+        date: Date,
+        privacy: KVKLogPrivacy,
+        delegate: KVKLoggerDelegate?
     ) {
         let iso8601Date = date.formatted(.iso8601)
         let icon = "\(status.icon) "
         let iconWithDate = "\(icon)\(iso8601Date)"
-        
+
         switch type {
         case .os:
             let txt: String
@@ -137,7 +166,7 @@ open class KVKLogger: @unchecked Sendable {
             } else {
                 txt = "\(icon)\(iso8601Date) \(String(describing: items))"
             }
-            status.saveOSLog(txt, type: itemType)
+            status.saveOSLog(txt, type: itemType, privacy: privacy)
             delegate?.didLog(txt, type: itemType)
         case .debug:
             if let details {
@@ -157,7 +186,14 @@ open class KVKLogger: @unchecked Sendable {
             }
         }
     }
-    
+
+    @discardableResult
+    private func withLock<T>(_ body: () -> T) -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return body()
+    }
+
 }
 
 public protocol KVKLoggerDelegate: AnyObject {
@@ -165,7 +201,6 @@ public protocol KVKLoggerDelegate: AnyObject {
 }
 
 public extension KVKLoggerDelegate {
-    func didLog(_ items: Any..., type: KVKItemLogType = .common) {
-        didLog(items, type: type)
-    }
+    /// Default no-op implementation so conforming types are not required to implement `didLog`.
+    func didLog(_ items: Any..., type: KVKItemLogType = .common) {}
 }

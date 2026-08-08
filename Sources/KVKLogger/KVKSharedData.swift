@@ -1,59 +1,57 @@
 //
 //  KVKSharedData.swift
-//  
+//
 //
 //  Created by Sergei Kviatkovskii on 2/2/23.
 //
 
-import SwiftUI
+import Foundation
 
 final class KVKSharedData: @unchecked Sendable {
-        
+
     static let shared = KVKSharedData()
-        
-    @AppStorage("clearBy") private var clearBy_: String?
-    @AppStorage("clearByDate") private var lastClearByDate_: String?
-    
+
+    private let defaults = UserDefaults.standard
+    private let clearByKey = "clearBy"
+    private let lastClearByDateKey = "clearByDate"
+    private let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy.MM.dd"
+        return f
+    }()
+
     var isPreviewMode: Bool {
-        if let isPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"], isPreview == "1" {
-            return true
-        } else {
-            return false
-        }
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     }
-    
+
     var clearBy: SettingSubItem {
         get {
-            guard let item = clearBy_ else { return .everyWeek }
+            guard let item = defaults.string(forKey: clearByKey) else { return .everyWeek }
             return SettingSubItem(rawValue: item) ?? .everyWeek
         }
         set {
-            clearBy_ = newValue.rawValue
+            // only update (and reset timer) when the value actually changes
+            guard newValue.rawValue != defaults.string(forKey: clearByKey) else { return }
+            defaults.set(newValue.rawValue, forKey: clearByKey)
             lastClearByDate = Date()
         }
     }
-    
+
     var lastClearByDate: Date {
         get {
-            guard let dt = lastClearByDate_ else { return Date() }
-            
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy.MM.dd"
-            return formatter.date(from: dt) ?? Date()
+            guard let dt = defaults.string(forKey: lastClearByDateKey) else { return Date() }
+            return dateFormatter.date(from: dt) ?? Date()
         }
         set {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy.MM.dd"
-            lastClearByDate_ = formatter.string(from: newValue)
+            defaults.set(dateFormatter.string(from: newValue), forKey: lastClearByDateKey)
         }
     }
-    
-    func needToDeleteOldRecords(from date: Date) -> Bool {
-        let fromDate = Calendar.current.startOfDay(for: date)
-        let toDate = Calendar.current.startOfDay(for: lastClearByDate)
-        let days = Calendar.current.dateComponents([.day],
-                                                   from: fromDate,
-                                                   to: toDate).day ?? 0
+
+    /// Returns true when enough days have elapsed since the last clear to trigger auto-deletion.
+    func needToDeleteOldRecords() -> Bool {
+        let from = Calendar.current.startOfDay(for: lastClearByDate)
+        let to = Calendar.current.startOfDay(for: Date())
+        let days = Calendar.current.dateComponents([.day], from: from, to: to).day ?? 0
         switch clearBy {
         case .everyDay, .everyWeek, .everyMonth, .everyYear:
             return days >= clearBy.daysInLive
@@ -61,11 +59,11 @@ final class KVKSharedData: @unchecked Sendable {
             return false
         }
     }
-    
+
     private init() {
-        if clearBy_ == nil {
+        if defaults.string(forKey: clearByKey) == nil {
             clearBy = .everyWeek
         }
     }
-    
+
 }
