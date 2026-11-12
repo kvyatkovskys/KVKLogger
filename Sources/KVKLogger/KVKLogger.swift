@@ -19,7 +19,21 @@ public enum KVKLogPrivacy {
 
 public final class KVKLogger: @unchecked Sendable {
 
-    let store: KVKPersistenceСontroller
+    /// Created on first use, so an app that turns `isEnableSaveIntoDB` off before logging
+    /// never loads the Core Data stack or creates the SQLite file.
+    var store: KVKPersistenceСontroller {
+        storeLock.lock()
+        defer { storeLock.unlock() }
+        if let _store {
+            return _store
+        }
+        let store = KVKPersistenceСontroller()
+        _store = store
+        return store
+    }
+    private var _store: KVKPersistenceСontroller?
+    /// Separate from `lock`, so loading the store never blocks the logging properties.
+    private let storeLock = NSLock()
 
     public static let shared = KVKLogger()
 
@@ -55,8 +69,14 @@ public final class KVKLogger: @unchecked Sendable {
 
     private var _availabeSaveNetworkLogs = true
 
-    private init() {
-        store = KVKPersistenceСontroller()
+    /// Internal (not private) so tests can use a fresh instance instead of `shared`.
+    init() {}
+
+    /// Whether the Core Data store has been created.
+    var isStoreLoaded: Bool {
+        storeLock.lock()
+        defer { storeLock.unlock() }
+        return _store != nil
     }
 
     public func configure(availabeSaveNetworkLogs: Bool = true) {

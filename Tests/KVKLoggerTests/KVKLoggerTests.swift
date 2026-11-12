@@ -623,3 +623,27 @@ struct KVKLoggerPublicAPITests {
         #expect(delegate.receivedType == .network)
     }
 }
+
+// MARK: - Lazy store
+
+@Suite("KVKLogger store")
+struct KVKLoggerStoreTests {
+
+    @Test("logging with DB saving off never creates the store")
+    func noStoreWhenSavingDisabled() {
+        let logger = KVKLogger()
+        logger.isEnableSaveIntoDB = false
+        logger.isDebugMode = false
+        logger.log("message")
+        logger.network("request")
+        #expect(logger.isStoreLoaded == false)
+    }
+
+    @Test("the store is created on first access")
+    func storeCreatedOnFirstAccess() {
+        let logger = KVKLogger()
+        #expect(logger.isStoreLoaded == false)
+        _ = logger.store
+        #expect(logger.isStoreLoaded)
+    }
+}
